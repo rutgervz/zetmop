@@ -21,109 +21,117 @@ function sq(col: number, row: number): Square {
   return `${String.fromCharCode(97 + col)}${row + 1}` as Square;
 }
 
+/** Schaalfactor — alles 1.5x groter zodat stukken goed zichtbaar zijn */
+const S = 1.5;
+
 function makePiece(THREE: any, type: PieceSymbol, color: Color) {
   const isW = color === 'w';
-  const pcMat = new THREE.MeshStandardMaterial({ color: isW ? 0xFFEEDD : 0x1A1A1A, roughness: 0.4, metalness: 0.15 });
-  const acMat = new THREE.MeshStandardMaterial({ color: isW ? 0xDDC8A8 : 0x333333, roughness: 0.35, metalness: 0.2 });
+  // Meer contrast: wit = warm crème, zwart = diep donkerbruin (niet puur zwart)
+  const pcMat = new THREE.MeshStandardMaterial({
+    color: isW ? 0xFFF5E6 : 0x2A1810,
+    roughness: isW ? 0.35 : 0.5,
+    metalness: isW ? 0.1 : 0.25,
+  });
+  const acMat = new THREE.MeshStandardMaterial({
+    color: isW ? 0xE8D5B5 : 0x443322,
+    roughness: isW ? 0.3 : 0.45,
+    metalness: isW ? 0.15 : 0.3,
+  });
   const g = new THREE.Group();
 
-  const cs = (m: any) => { m.castShadow = true; return m; };
+  const cs = (m: any) => { m.castShadow = true; m.receiveShadow = true; return m; };
   const add = (m: any) => { g.add(cs(m)); return m; };
 
   if (type === 'p') {
     // PION — kort, bol bovenop, simpelste stuk
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.04, 20), acMat)).position.y = 0.02;
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.17, 0.22, 14), pcMat)).position.y = 0.15;
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), pcMat)).position.y = 0.34;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.18*S, 0.22*S, 0.05*S, 24), acMat)).position.y = 0.025*S;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.10*S, 0.17*S, 0.28*S, 16), pcMat)).position.y = 0.19*S;
+    add(new THREE.Mesh(new THREE.SphereGeometry(0.13*S, 16, 16), pcMat)).position.y = 0.42*S;
 
   } else if (type === 'r') {
     // TOREN — breed, vierkante kantelen bovenop
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.05, 20), acMat)).position.y = 0.03;
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.21, 0.35, 16), pcMat)).position.y = 0.22;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.22*S, 0.27*S, 0.06*S, 24), acMat)).position.y = 0.03*S;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.18*S, 0.22*S, 0.45*S, 20), pcMat)).position.y = 0.28*S;
     // Brede platte bovenkant
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.06, 16), acMat)).position.y = 0.43;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.23*S, 0.18*S, 0.07*S, 20), acMat)).position.y = 0.54*S;
     // Vier kantelen
     for (let i = 0; i < 4; i++) {
-      const angle = (i / 4) * Math.PI * 2;
-      const m = add(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.08), pcMat));
-      m.position.set(Math.sin(angle) * 0.15, 0.51, Math.cos(angle) * 0.15);
+      const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+      const m = add(new THREE.Mesh(new THREE.BoxGeometry(0.09*S, 0.13*S, 0.09*S), pcMat));
+      m.position.set(Math.sin(angle) * 0.16*S, 0.64*S, Math.cos(angle) * 0.16*S);
     }
 
   } else if (type === 'n') {
-    // PAARD — kijkt naar links (negatieve x-richting)
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.23, 0.05, 20), acMat)).position.y = 0.03;
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.18, 0.25, 14), pcMat)).position.y = 0.18;
-    // Nek (schuin naar links)
-    const neck = add(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.28, 10), pcMat));
-    neck.position.set(-0.02, 0.42, 0); neck.rotation.z = -0.15;
-    // Hoofd (naar links)
-    const head = add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.14), pcMat));
-    head.position.set(-0.1, 0.55, 0); head.rotation.z = -0.4;
+    // PAARD — kijkt naar links, markant silhouet
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.20*S, 0.24*S, 0.06*S, 24), acMat)).position.y = 0.03*S;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.11*S, 0.19*S, 0.30*S, 16), pcMat)).position.y = 0.21*S;
+    // Nek (schuin naar links, langer)
+    const neck = add(new THREE.Mesh(new THREE.CylinderGeometry(0.09*S, 0.13*S, 0.36*S, 12), pcMat));
+    neck.position.set(-0.04*S, 0.52*S, 0); neck.rotation.z = -0.2;
+    // Hoofd (naar links, groter)
+    const head = add(new THREE.Mesh(new THREE.BoxGeometry(0.26*S, 0.20*S, 0.16*S), pcMat));
+    head.position.set(-0.14*S, 0.70*S, 0); head.rotation.z = -0.4;
     // Snuit (naar links)
-    const snout = add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.10), pcMat));
-    snout.position.set(-0.2, 0.50, 0); snout.rotation.z = -0.5;
-    // Oren
-    const ear1 = add(new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.1, 6), pcMat));
-    ear1.position.set(-0.06, 0.65, -0.05);
-    const ear2 = add(new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.1, 6), pcMat));
-    ear2.position.set(-0.06, 0.65, 0.05);
+    const snout = add(new THREE.Mesh(new THREE.BoxGeometry(0.20*S, 0.12*S, 0.12*S), pcMat));
+    snout.position.set(-0.28*S, 0.62*S, 0); snout.rotation.z = -0.5;
+    // Oren (groter)
+    const ear1 = add(new THREE.Mesh(new THREE.ConeGeometry(0.04*S, 0.14*S, 6), pcMat));
+    ear1.position.set(-0.08*S, 0.82*S, -0.06*S);
+    const ear2 = add(new THREE.Mesh(new THREE.ConeGeometry(0.04*S, 0.14*S, 6), pcMat));
+    ear2.position.set(-0.08*S, 0.82*S, 0.06*S);
 
   } else if (type === 'b') {
     // LOPER — hoog, smal, puntige mijter met gleuf
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.23, 0.05, 20), acMat)).position.y = 0.03;
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.18, 0.32, 14), pcMat)).position.y = 0.22;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.20*S, 0.24*S, 0.06*S, 24), acMat)).position.y = 0.03*S;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.09*S, 0.19*S, 0.40*S, 16), pcMat)).position.y = 0.26*S;
     // Collar ring
-    add(new THREE.Mesh(new THREE.TorusGeometry(0.10, 0.025, 8, 20), acMat)).position.y = 0.40;
+    add(new THREE.Mesh(new THREE.TorusGeometry(0.11*S, 0.03*S, 8, 24), acMat)).position.y = 0.49*S;
     // Druppelvorm (ovaal gestretcht)
-    const drop = add(new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 16), pcMat));
-    drop.position.y = 0.52; drop.scale.set(1, 1.4, 1);
+    const drop = add(new THREE.Mesh(new THREE.SphereGeometry(0.12*S, 16, 16), pcMat));
+    drop.position.y = 0.64*S; drop.scale.set(1, 1.5, 1);
     // Gleuf (donkere lijn)
-    const slit = add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.005, 0.04), acMat));
-    slit.position.set(0, 0.58, 0.08); slit.rotation.x = -0.5;
+    const slit = add(new THREE.Mesh(new THREE.BoxGeometry(0.14*S, 0.006*S, 0.05*S), acMat));
+    slit.position.set(0, 0.72*S, 0.09*S); slit.rotation.x = -0.5;
     // Puntje bovenop
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 10), acMat)).position.y = 0.68;
+    add(new THREE.Mesh(new THREE.SphereGeometry(0.045*S, 12, 12), acMat)).position.y = 0.85*S;
 
   } else if (type === 'q') {
     // DAME — groot, kroon met punten, bol bovenop
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.27, 0.06, 20), acMat)).position.y = 0.03;
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.21, 0.38, 14), pcMat)).position.y = 0.25;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.23*S, 0.28*S, 0.07*S, 24), acMat)).position.y = 0.035*S;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.11*S, 0.22*S, 0.48*S, 18), pcMat)).position.y = 0.31*S;
     // Collar
-    add(new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.03, 8, 20), acMat)).position.y = 0.46;
-    // Kroon basis (korte brede cilinder)
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.08, 16), pcMat)).position.y = 0.52;
-    // Kroon punten (8 puntjes in een cirkel)
+    add(new THREE.Mesh(new THREE.TorusGeometry(0.13*S, 0.035*S, 8, 24), acMat)).position.y = 0.58*S;
+    // Kroon basis
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.16*S, 0.13*S, 0.10*S, 20), pcMat)).position.y = 0.66*S;
+    // Kroon punten (8 puntjes)
     for (let i = 0; i < 8; i++) {
       const angle = (i / 8) * Math.PI * 2;
-      const spike = add(new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 6), acMat));
-      spike.position.set(Math.sin(angle) * 0.12, 0.62, Math.cos(angle) * 0.12);
+      const spike = add(new THREE.Mesh(new THREE.ConeGeometry(0.03*S, 0.16*S, 6), acMat));
+      spike.position.set(Math.sin(angle) * 0.13*S, 0.80*S, Math.cos(angle) * 0.13*S);
     }
     // Bol bovenop
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 14), acMat)).position.y = 0.68;
+    add(new THREE.Mesh(new THREE.SphereGeometry(0.065*S, 14, 14), acMat)).position.y = 0.88*S;
 
   } else if (type === 'k') {
     // KONING — het hoogste stuk, breed, kruis bovenop
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.28, 0.06, 20), acMat)).position.y = 0.03;
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.22, 0.40, 14), pcMat)).position.y = 0.26;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.24*S, 0.29*S, 0.07*S, 24), acMat)).position.y = 0.035*S;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.12*S, 0.23*S, 0.50*S, 18), pcMat)).position.y = 0.32*S;
     // Collar
-    add(new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.03, 8, 20), acMat)).position.y = 0.48;
-    // Kroon band (brede ring)
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.14, 0.1, 16), pcMat)).position.y = 0.55;
-    // Boog-armen (4 gebogen strips die naar boven komen)
+    add(new THREE.Mesh(new THREE.TorusGeometry(0.14*S, 0.035*S, 8, 24), acMat)).position.y = 0.60*S;
+    // Kroon band
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.17*S, 0.15*S, 0.12*S, 20), pcMat)).position.y = 0.69*S;
+    // Boog-armen
     for (let i = 0; i < 4; i++) {
       const angle = (i / 4) * Math.PI * 2;
-      const arm = add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.14, 0.03), pcMat));
-      arm.position.set(Math.sin(angle) * 0.10, 0.65, Math.cos(angle) * 0.10);
-      arm.rotation.set(
-        Math.cos(angle) * 0.3,
-        0,
-        -Math.sin(angle) * 0.3
-      );
+      const arm = add(new THREE.Mesh(new THREE.BoxGeometry(0.035*S, 0.18*S, 0.035*S), pcMat));
+      arm.position.set(Math.sin(angle) * 0.11*S, 0.82*S, Math.cos(angle) * 0.11*S);
+      arm.rotation.set(Math.cos(angle) * 0.3, 0, -Math.sin(angle) * 0.3);
     }
-    // Kruis
-    const vbar = add(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.22, 0.05), acMat));
-    vbar.position.y = 0.75;
-    const hbar = add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.05), acMat));
-    hbar.position.y = 0.80;
+    // Kruis (groter, duidelijker)
+    const vbar = add(new THREE.Mesh(new THREE.BoxGeometry(0.06*S, 0.28*S, 0.06*S), acMat));
+    vbar.position.y = 0.95*S;
+    const hbar = add(new THREE.Mesh(new THREE.BoxGeometry(0.20*S, 0.06*S, 0.06*S), acMat));
+    hbar.position.y = 1.02*S;
   }
 
   return g;
@@ -174,25 +182,37 @@ export default function ChessBoard3D() {
 
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(BG);
-      scene.fog = new THREE.Fog(BG, 18, 28);
+      scene.fog = new THREE.Fog(BG, 22, 35);
 
-      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      camera.position.set(0, 13, 5);
+      // Camera: klassieke schaak-hoek, iets van opzij
+      const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+      camera.position.set(0, 10, 8);
       camera.lookAt(0, 0, 0);
 
-      // Lighting
-      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-      const dl = new THREE.DirectionalLight(0xfff5e0, 1.1);
-      dl.position.set(5, 12, 5);
+      // Lighting — drie-punts belichting voor maximaal contrast
+      // Ambient: zacht basisniveau
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+
+      // Key light: warm, van rechtsboven
+      const dl = new THREE.DirectionalLight(0xfff5e0, 1.3);
+      dl.position.set(6, 14, 6);
       dl.castShadow = true;
       dl.shadow.mapSize.set(2048, 2048);
       dl.shadow.camera.near = 0.5; dl.shadow.camera.far = 50;
       dl.shadow.camera.left = -10; dl.shadow.camera.right = 10;
       dl.shadow.camera.top = 10; dl.shadow.camera.bottom = -10;
+      dl.shadow.bias = -0.001;
       scene.add(dl);
-      const fl = new THREE.DirectionalLight(0x8888ff, 0.2);
-      fl.position.set(-4, 6, -4);
+
+      // Fill light: koel, van linksboven — geeft diepte
+      const fl = new THREE.DirectionalLight(0x8899cc, 0.35);
+      fl.position.set(-5, 8, -4);
       scene.add(fl);
+
+      // Rim light: van achteren — omlijnt de stukken
+      const rl = new THREE.DirectionalLight(0xffffff, 0.4);
+      rl.position.set(0, 6, -8);
+      scene.add(rl);
 
       // Board frame
       const frameMat = new THREE.MeshStandardMaterial({ color: FRAME, roughness: 0.85 });
@@ -245,7 +265,8 @@ export default function ChessBoard3D() {
 
       // Camera orbit (right-click/shift+drag)
       let dragging = false, px = 0, py = 0;
-      let theta = 0, phi = Math.PI / 6, radius = 14;
+      // phi = hoek van bovenaf: PI/4 = 45° van boven (klassieke schaakhoek)
+      let theta = 0, phi = Math.PI / 3.8, radius = 13;
 
       canvas.addEventListener('pointerdown', (e) => {
         if (e.button === 2 || e.shiftKey) { dragging = true; px = e.clientX; py = e.clientY; }
