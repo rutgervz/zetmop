@@ -1,13 +1,21 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet, SafeAreaView, useWindowDimensions } from 'react-native';
-import { router, Stack } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, StyleSheet, SafeAreaView, useWindowDimensions } from 'react-native';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import ChessBoard from '@/components/board/ChessBoard';
 import PromotionModal from '@/components/board/PromotionModal';
 import { useGameStore } from '@/stores/gameStore';
 import { AppColors } from '@/constants/Colors';
+import type { GameMode } from '@/lib/chess/types';
 
 export default function GameScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const mode = (id === 'ai' ? 'ai' : 'local') as GameMode;
+
+  const [phase, setPhase] = useState<'setup' | 'playing'>('setup');
+  const [nameWhite, setNameWhite] = useState('');
+  const [nameBlack, setNameBlack] = useState(mode === 'ai' ? 'Computer' : '');
+
   const turn = useGameStore((s) => s.turn);
   const status = useGameStore((s) => s.status);
   const playerWhite = useGameStore((s) => s.playerWhite);
@@ -15,6 +23,7 @@ export default function GameScreen() {
   const moveHistory = useGameStore((s) => s.moveHistory);
   const undoMove = useGameStore((s) => s.undoMove);
   const newGame = useGameStore((s) => s.newGame);
+  const setPlayerNames = useGameStore((s) => s.setPlayerNames);
   const lastEvent = useGameStore((s) => s.lastEvent);
 
   const isGameOver = ['checkmate', 'stalemate', 'draw', 'resigned'].includes(status);
@@ -23,14 +32,92 @@ export default function GameScreen() {
       ? lastEvent.winner === 'w' ? playerWhite : playerBlack
       : null;
 
-  // Compact move display: last few moves
   const recentMoves = moveHistory.slice(-6);
 
+  const startGame = () => {
+    const white = nameWhite.trim() || 'Wit';
+    const black = mode === 'ai' ? 'Computer' : (nameBlack.trim() || 'Zwart');
+    setPlayerNames(white, black);
+    newGame(mode);
+    setPhase('playing');
+  };
+
+  // Setup scherm: namen invullen
+  if (phase === 'setup') {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={styles.setupContainer}>
+          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+            <FontAwesome name="chevron-left" size={18} color="#666" />
+          </Pressable>
+
+          <Text style={styles.setupTitle}>
+            {mode === 'ai' ? '♟ Tegen de computer' : '♟ Lokaal spelen'}
+          </Text>
+          <Text style={styles.setupSubtitle}>Wie spelen er mee?</Text>
+
+          <View style={styles.nameFields}>
+            <View style={styles.nameRow}>
+              <View style={[styles.colorDot, { backgroundColor: '#FFF5E6', borderColor: '#ccc' }]} />
+              <TextInput
+                style={styles.nameInput}
+                placeholder="Naam wit"
+                placeholderTextColor="#555"
+                value={nameWhite}
+                onChangeText={setNameWhite}
+                autoFocus
+                returnKeyType={mode === 'ai' ? 'go' : 'next'}
+                onSubmitEditing={mode === 'ai' ? startGame : undefined}
+              />
+            </View>
+
+            {mode !== 'ai' && (
+              <View style={styles.nameRow}>
+                <View style={[styles.colorDot, { backgroundColor: '#2A1810', borderColor: '#555' }]} />
+                <TextInput
+                  style={styles.nameInput}
+                  placeholder="Naam zwart"
+                  placeholderTextColor="#555"
+                  value={nameBlack}
+                  onChangeText={setNameBlack}
+                  returnKeyType="go"
+                  onSubmitEditing={startGame}
+                />
+              </View>
+            )}
+
+            {mode === 'ai' && (
+              <View style={styles.nameRow}>
+                <View style={[styles.colorDot, { backgroundColor: '#2A1810', borderColor: '#555' }]} />
+                <View style={styles.aiLabel}>
+                  <FontAwesome name="desktop" size={16} color={AppColors.accent} />
+                  <Text style={styles.aiText}>Computer</Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.startBtn,
+              pressed && styles.startBtnPressed,
+            ]}
+            onPress={startGame}
+          >
+            <Text style={styles.startBtnText}>Speel!</Text>
+          </Pressable>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // Game scherm
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Minimale top bar */}
+      {/* Compacte top bar */}
       <SafeAreaView style={styles.topBar}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <FontAwesome name="chevron-left" size={18} color="#666" />
@@ -60,12 +147,12 @@ export default function GameScreen() {
         </View>
       )}
 
-      {/* 2D Board met 3D effects overlay */}
+      {/* Board — maximaal schermvullend */}
       <View style={styles.boardArea}>
         <ChessBoard />
       </View>
 
-      {/* Minimale bottom bar */}
+      {/* Compacte bottom bar */}
       <SafeAreaView style={styles.bottomBar}>
         {recentMoves.length > 0 && (
           <View style={styles.movesRow}>
@@ -83,7 +170,10 @@ export default function GameScreen() {
         {isGameOver && (
           <Pressable
             style={styles.newGameBtn}
-            onPress={() => newGame('local')}
+            onPress={() => {
+              newGame(mode);
+              setPhase('setup');
+            }}
           >
             <Text style={styles.newGameText}>Nieuw spel</Text>
           </Pressable>
@@ -98,7 +188,7 @@ export default function GameScreen() {
 function PlayerChip({ name, color, active }: { name: string; color: 'w' | 'b'; active: boolean }) {
   return (
     <View style={[styles.chip, active && styles.chipActive]}>
-      <View style={[styles.dot, { backgroundColor: color === 'w' ? '#F0D9B5' : '#463624' }]} />
+      <View style={[styles.dot, { backgroundColor: color === 'w' ? '#FFF5E6' : '#2A1810' }]} />
       <Text style={[styles.chipText, active && styles.chipTextActive]}>{name}</Text>
     </View>
   );
@@ -109,12 +199,87 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1A1A2E',
   },
+  // Setup scherm
+  setupContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  backBtn: {
+    marginBottom: 24,
+  },
+  setupTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: AppColors.text,
+    textAlign: 'center',
+  },
+  setupSubtitle: {
+    fontSize: 16,
+    color: AppColors.textMuted,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 40,
+  },
+  nameFields: {
+    gap: 16,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: AppColors.surface,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  colorDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  nameInput: {
+    flex: 1,
+    color: AppColors.text,
+    fontSize: 18,
+    fontWeight: '500',
+    padding: 0,
+  },
+  aiLabel: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  aiText: {
+    color: AppColors.accent,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  startBtn: {
+    backgroundColor: AppColors.primary,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  startBtnPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  startBtnText: {
+    color: '#1A1A2E',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  // Game scherm
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
   players: {
     flexDirection: 'row',
@@ -130,7 +295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 20,
     backgroundColor: 'transparent',
   },
@@ -155,7 +320,7 @@ const styles = StyleSheet.create({
   },
   statusBar: {
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   statusText: {
     color: AppColors.gold,
@@ -167,14 +332,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bottomBar: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 4,
     alignItems: 'center',
   },
   movesRow: {
     flexDirection: 'row',
     gap: 8,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   moveText: {
     color: '#555',
@@ -190,7 +355,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 20,
-    marginTop: 8,
+    marginTop: 4,
   },
   newGameText: {
     color: '#1A1A2E',

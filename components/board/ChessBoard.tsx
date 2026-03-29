@@ -26,8 +26,9 @@ export default function ChessBoard() {
   const boardFlipped = useGameStore((s) => s.boardFlipped);
   const selectSquare = useGameStore((s) => s.selectSquare);
 
-  const coordSize = 22;
-  const maxSize = Math.min(windowWidth - 16, windowHeight - 220) * 0.92;
+  // Bord zo groot mogelijk: minimale marges, coördinaten compact
+  const coordSize = 18;
+  const maxSize = Math.min(windowWidth - 4, windowHeight - 100);
   const boardSize = Math.floor((maxSize - coordSize * 2) / 8) * 8;
   const squareSize = boardSize / 8;
 
@@ -136,7 +137,7 @@ export default function ChessBoard() {
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 2,
   },
   outerFrame: {
     backgroundColor: BOARD_OUTER_COLOR,
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
   },
   fileRow: {
     flexDirection: 'row',
-    height: 22,
+    height: 18,
     alignItems: 'center',
   },
   rankCol: {
@@ -174,7 +175,7 @@ const styles = StyleSheet.create({
   },
   coord: {
     color: COORD_COLOR,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
