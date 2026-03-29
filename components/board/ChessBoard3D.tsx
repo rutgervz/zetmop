@@ -173,8 +173,8 @@ export default function ChessBoard3D() {
       scene.background = new THREE.Color(BG);
       scene.fog = new THREE.Fog(BG, 18, 28);
 
-      const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-      camera.position.set(0, 9, 7);
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+      camera.position.set(0, 13, 5);
       camera.lookAt(0, 0, 0);
 
       // Lighting
@@ -242,7 +242,7 @@ export default function ChessBoard3D() {
 
       // Camera orbit (right-click/shift+drag)
       let dragging = false, px = 0, py = 0;
-      let theta = 0, phi = Math.PI / 4, radius = 11;
+      let theta = 0, phi = Math.PI / 6, radius = 14;
 
       canvas.addEventListener('pointerdown', (e) => {
         if (e.button === 2 || e.shiftKey) { dragging = true; px = e.clientX; py = e.clientY; }
