@@ -1,8 +1,15 @@
 import React from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import SquareComponent from './Square';
 import { useGameStore } from '@/stores/gameStore';
-import type { Square, PieceType } from '@/lib/chess/types';
+import type { Square } from '@/lib/chess/types';
+
+const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+const BOARD_BORDER_COLOR = '#5C4A2E';
+const BOARD_OUTER_COLOR = '#3D2E16';
+const COORD_COLOR = '#C4A96A';
 
 export default function ChessBoard() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -14,20 +21,18 @@ export default function ChessBoard() {
   const turn = useGameStore((s) => s.turn);
   const boardFlipped = useGameStore((s) => s.boardFlipped);
   const selectSquare = useGameStore((s) => s.selectSquare);
-  const engine = useGameStore((s) => s.engine);
 
-  // Board fills available space, max 90% of smallest dimension
-  const maxSize = Math.min(windowWidth, windowHeight - 200) * 0.9;
-  const boardSize = Math.floor(maxSize / 8) * 8;
+  const coordSize = 22;
+  const maxSize = Math.min(windowWidth - 16, windowHeight - 220) * 0.92;
+  const boardSize = Math.floor((maxSize - coordSize * 2) / 8) * 8;
   const squareSize = boardSize / 8;
 
   // Find king in check
   let checkSquare: Square | null = null;
   if (status === 'check' || status === 'checkmate') {
-    const b = board;
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
-        const piece = b[r][c];
+        const piece = board[r][c];
         if (piece && piece.type === 'k' && piece.color === turn) {
           const file = String.fromCharCode(97 + c);
           const rank = 8 - r;
@@ -37,51 +42,140 @@ export default function ChessBoard() {
     }
   }
 
-  const rows = boardFlipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [0, 1, 2, 3, 4, 5, 6, 7];
-  const cols = boardFlipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+  const displayFiles = boardFlipped ? [...FILES].reverse() : FILES;
+  const displayRanks = boardFlipped ? [...RANKS].reverse() : RANKS;
 
   return (
-    <View style={[styles.board, { width: boardSize, height: boardSize }]}>
-      {rows.map((displayRow) => {
-        const r = boardFlipped ? 7 - displayRow : displayRow;
-        return (
-          <View key={r} style={styles.row}>
-            {cols.map((c) => {
-              const file = String.fromCharCode(97 + c);
-              const rank = 8 - r;
-              const square = `${file}${rank}` as Square;
-              const piece = board[r][c];
-              const isLight = (r + c) % 2 === 0;
+    <View style={styles.wrapper}>
+      {/* Outer frame */}
+      <View style={[styles.outerFrame, { width: boardSize + coordSize * 2 + 8 }]}>
+        {/* Top file labels */}
+        <View style={[styles.fileRow, { marginLeft: coordSize + 4 }]}>
+          {displayFiles.map((file) => (
+            <Text key={`top-${file}`} style={[styles.coord, { width: squareSize }]}>
+              {file}
+            </Text>
+          ))}
+        </View>
 
-              return (
-                <SquareComponent
-                  key={square}
-                  square={square}
-                  piece={piece}
-                  size={squareSize}
-                  isLight={isLight}
-                  isSelected={selectedSquare === square}
-                  isLegalMove={legalMoves.includes(square)}
-                  isLastMove={lastMove?.from === square || lastMove?.to === square}
-                  isCheck={checkSquare === square}
-                  onPress={selectSquare}
-                />
-              );
-            })}
+        <View style={styles.middleRow}>
+          {/* Left rank labels */}
+          <View style={[styles.rankCol, { width: coordSize }]}>
+            {displayRanks.map((rank) => (
+              <Text key={`left-${rank}`} style={[styles.coord, styles.rankLabel, { height: squareSize }]}>
+                {rank}
+              </Text>
+            ))}
           </View>
-        );
-      })}
+
+          {/* Board with inner border */}
+          <View style={styles.innerFrame}>
+            <View style={[styles.board, { width: boardSize, height: boardSize }]}>
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((displayRow) => {
+                const r = boardFlipped ? 7 - displayRow : displayRow;
+                return (
+                  <View key={r} style={styles.row}>
+                    {[0, 1, 2, 3, 4, 5, 6, 7].map((displayCol) => {
+                      const c = boardFlipped ? 7 - displayCol : displayCol;
+                      const file = String.fromCharCode(97 + c);
+                      const rank = 8 - r;
+                      const square = `${file}${rank}` as Square;
+                      const piece = board[r][c];
+                      const isLight = (r + c) % 2 === 0;
+
+                      return (
+                        <SquareComponent
+                          key={square}
+                          square={square}
+                          piece={piece}
+                          size={squareSize}
+                          isLight={isLight}
+                          isSelected={selectedSquare === square}
+                          isLegalMove={legalMoves.includes(square)}
+                          isLastMove={lastMove?.from === square || lastMove?.to === square}
+                          isCheck={checkSquare === square}
+                          onPress={selectSquare}
+                        />
+                      );
+                    })}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Right rank labels */}
+          <View style={[styles.rankCol, { width: coordSize }]}>
+            {displayRanks.map((rank) => (
+              <Text key={`right-${rank}`} style={[styles.coord, styles.rankLabel, { height: squareSize }]}>
+                {rank}
+              </Text>
+            ))}
+          </View>
+        </View>
+
+        {/* Bottom file labels */}
+        <View style={[styles.fileRow, { marginLeft: coordSize + 4 }]}>
+          {displayFiles.map((file) => (
+            <Text key={`bottom-${file}`} style={[styles.coord, { width: squareSize }]}>
+              {file}
+            </Text>
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  board: {
+  wrapper: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  outerFrame: {
+    backgroundColor: BOARD_OUTER_COLOR,
+    borderRadius: 8,
+    padding: 4,
+    // Shadow for depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  innerFrame: {
     borderWidth: 2,
-    borderColor: '#463624',
-    alignSelf: 'center',
+    borderColor: BOARD_BORDER_COLOR,
+    borderRadius: 2,
+  },
+  middleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  board: {
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
+  },
+  fileRow: {
+    flexDirection: 'row',
+    height: 22,
+    alignItems: 'center',
+  },
+  rankCol: {
+    justifyContent: 'center',
+  },
+  coord: {
+    color: COORD_COLOR,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
+  rankLabel: {
+    justifyContent: 'center',
+    textAlignVertical: 'center',
+    lineHeight: undefined,
   },
 });

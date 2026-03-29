@@ -16,13 +16,15 @@ type SquareProps = {
 };
 
 const COLORS = {
-  light: '#F0D9B5',
-  dark: '#B58863',
-  selected: 'rgba(255, 255, 0, 0.5)',
-  legalMove: 'rgba(0, 0, 0, 0.2)',
-  legalCapture: 'rgba(0, 0, 0, 0.2)',
-  lastMove: 'rgba(155, 199, 0, 0.41)',
-  check: 'rgba(255, 0, 0, 0.5)',
+  lightBase: '#E8D5B5',
+  lightAccent: '#F2E4CC',
+  darkBase: '#7B6B4F',
+  darkAccent: '#8A7A5E',
+  selected: 'rgba(78, 205, 196, 0.55)',
+  legalMove: 'rgba(78, 205, 196, 0.4)',
+  lastMove: 'rgba(78, 205, 196, 0.25)',
+  check: 'radial-gradient(circle, rgba(255,50,50,0.8), rgba(255,0,0,0.3))',
+  checkColor: 'rgba(255, 50, 50, 0.55)',
 };
 
 export default function Square({
@@ -36,23 +38,39 @@ export default function Square({
   isCheck,
   onPress,
 }: SquareProps) {
-  const bgColor = isLight ? COLORS.light : COLORS.dark;
+  const bgColor = isLight ? COLORS.lightBase : COLORS.darkBase;
 
   return (
     <Pressable
       onPress={() => onPress(square)}
-      style={[
+      style={({ pressed }) => [
         styles.square,
         {
           width: size,
           height: size,
           backgroundColor: bgColor,
         },
+        pressed && styles.pressed,
       ]}
     >
+      {/* Subtle grain texture via inner highlight */}
+      <View
+        style={[
+          styles.grain,
+          {
+            backgroundColor: isLight ? COLORS.lightAccent : COLORS.darkAccent,
+            opacity: 0.3,
+          },
+        ]}
+      />
+
       {isLastMove && <View style={[styles.overlay, { backgroundColor: COLORS.lastMove }]} />}
       {isSelected && <View style={[styles.overlay, { backgroundColor: COLORS.selected }]} />}
-      {isCheck && <View style={[styles.overlay, { backgroundColor: COLORS.check }]} />}
+      {isCheck && (
+        <View style={[styles.checkOverlay, { borderColor: '#FF3232' }]}>
+          <View style={[styles.overlay, { backgroundColor: COLORS.checkColor }]} />
+        </View>
+      )}
 
       {piece && <Piece type={piece.type} color={piece.color} size={size} />}
 
@@ -61,9 +79,9 @@ export default function Square({
           style={[
             styles.legalDot,
             {
-              width: size * 0.3,
-              height: size * 0.3,
-              borderRadius: size * 0.15,
+              width: size * 0.28,
+              height: size * 0.28,
+              borderRadius: size * 0.14,
             },
           ]}
         />
@@ -73,10 +91,10 @@ export default function Square({
           style={[
             styles.legalCapture,
             {
-              width: size - 4,
-              height: size - 4,
-              borderRadius: (size - 4) / 2,
-              borderWidth: size * 0.08,
+              width: size - 2,
+              height: size - 2,
+              borderRadius: size * 0.08,
+              borderWidth: size * 0.06,
             },
           ]}
         />
@@ -90,16 +108,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    overflow: 'hidden',
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  grain: {
+    ...StyleSheet.absoluteFillObject,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
+  },
+  checkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 2,
   },
   legalDot: {
     backgroundColor: COLORS.legalMove,
     position: 'absolute',
   },
   legalCapture: {
-    borderColor: COLORS.legalCapture,
+    borderColor: 'rgba(78, 205, 196, 0.5)',
     position: 'absolute',
     backgroundColor: 'transparent',
   },
