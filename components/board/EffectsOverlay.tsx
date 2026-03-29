@@ -25,7 +25,7 @@ export default function EffectsOverlay({ boardSize }: Props) {
     let disposed = false;
 
     (async () => {
-      const THREE = (await import('three')).default || await import('three');
+      const THREE = await import('three');
 
       const canvas = document.createElement('canvas');
       canvas.width = boardSize * 2;

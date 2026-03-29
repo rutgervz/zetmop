@@ -158,7 +158,7 @@ export default function ChessBoard3D() {
     let disposed = false;
 
     (async () => {
-      const THREE = (await import('three')).default || await import('three');
+      const THREE = await import('three');
 
       const canvas = document.createElement('canvas');
       canvas.width = size * 2;

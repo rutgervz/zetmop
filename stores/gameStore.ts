@@ -64,6 +64,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       sf.init().catch((err) => console.warn('[Stockfish] Init failed:', err));
     }
 
+    // Keep existing player names — they're set by setPlayerNames before newGame
+    const { playerWhite, playerBlack } = get();
     set({
       board: engine.getBoard(),
       turn: 'w',
@@ -77,8 +79,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       boardFlipped: false,
       pendingPromotion: null,
       aiThinking: false,
-      playerWhite: mode === 'ai' ? 'Jij' : 'Wit',
-      playerBlack: mode === 'ai' ? 'Computer' : 'Zwart',
+      playerWhite,
+      playerBlack,
     });
   },
 

@@ -42,8 +42,8 @@ export default function QuaternityBoard() {
   const turn = useQuaternityStore((s) => s.turn);
   const selectSquare = useQuaternityStore((s) => s.selectSquare);
 
-  const squareSize = Math.floor(Math.min(ww - 4, wh - 56) / 8);
-  const boardSize = squareSize * 8;
+  const squareSize = Math.floor(Math.min(ww - 4, wh - 56) / 12);
+  const boardSize = squareSize * 12;
 
   // Legal moves lookup
   const legalSet = new Set(legalMoves.map((m) => `${m.col},${m.row}`));
@@ -51,10 +51,10 @@ export default function QuaternityBoard() {
   return (
     <View style={styles.wrapper}>
       <View style={[styles.board, { width: boardSize, height: boardSize }]}>
-        {/* Render top-to-bottom (row 7 = top) */}
-        {[7, 6, 5, 4, 3, 2, 1, 0].map((row) => (
+        {/* Render top-to-bottom (row 11 = top) */}
+        {[11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map((row) => (
           <View key={row} style={styles.row}>
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((col) => {
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((col) => {
               const piece = board[row]?.[col] ?? null;
               const isLight = (col + row) % 2 === 0;
               const isSelected = selectedSquare?.col === col && selectedSquare?.row === row;

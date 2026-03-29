@@ -31,8 +31,16 @@ class StockfishEngine {
     this.state = 'loading';
 
     return new Promise<void>((resolve, reject) => {
+      (async () => {
       try {
-        this.worker = new Worker(STOCKFISH_CDN);
+        // Web Workers can't load cross-origin scripts directly.
+        // Fetch the script as a blob and create a same-origin Worker.
+        const response = await fetch(STOCKFISH_CDN);
+        if (!response.ok) throw new Error(`Failed to fetch Stockfish: ${response.status}`);
+        const blob = new Blob([await response.text()], { type: 'application/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
+        this.worker = new Worker(blobUrl);
+        URL.revokeObjectURL(blobUrl);
 
         this.worker.onmessage = (event: MessageEvent) => {
           const line = typeof event.data === 'string' ? event.data : String(event.data);
@@ -72,6 +80,7 @@ class StockfishEngine {
         this.state = 'idle';
         reject(err);
       }
+      })();
     });
   }
 
