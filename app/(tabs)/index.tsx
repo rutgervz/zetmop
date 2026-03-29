@@ -51,8 +51,9 @@ export default function PlayScreen() {
       subtitle: 'Schaak met vier spelers',
       icon: 'th-large',
       color: AppColors.secondary,
-      onPress: () => {},
-      disabled: true,
+      onPress: () => {
+        router.push('/game/quaternity');
+      },
     },
   ];
 
