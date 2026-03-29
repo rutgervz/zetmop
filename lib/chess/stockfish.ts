@@ -7,8 +7,10 @@ import { Platform } from 'react-native';
  * since WASM Web Workers are not available in React Native's JS engine.
  */
 
+// Use the classic (non-NNUE) Stockfish build — it doesn't require
+// SharedArrayBuffer, so it works without special COOP/COEP headers.
 const STOCKFISH_CDN =
-  'https://cdn.jsdelivr.net/npm/stockfish@16/src/stockfish-nnue-16-single.js';
+  'https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js';
 
 type StockfishState = 'idle' | 'loading' | 'ready' | 'busy' | 'disposed';
 
@@ -18,9 +20,11 @@ class StockfishEngine {
   private resolveMove: ((move: string) => void) | null = null;
   private rejectMove: ((err: Error) => void) | null = null;
   private moveTimeout: ReturnType<typeof setTimeout> | null = null;
+  private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
-    if (this.state === 'ready' || this.state === 'loading') return;
+    if (this.state === 'ready') return;
+    if (this.state === 'loading' && this.initPromise) return this.initPromise;
 
     if (Platform.OS !== 'web') {
       // On native platforms, no real Stockfish — mark as ready for fallback
@@ -29,59 +33,57 @@ class StockfishEngine {
     }
 
     this.state = 'loading';
+    this.initPromise = this._doInit();
+    return this.initPromise;
+  }
 
-    return new Promise<void>((resolve, reject) => {
-      (async () => {
-      try {
-        // Web Workers can't load cross-origin scripts directly.
-        // Fetch the script as a blob and create a same-origin Worker.
-        const response = await fetch(STOCKFISH_CDN);
-        if (!response.ok) throw new Error(`Failed to fetch Stockfish: ${response.status}`);
-        const blob = new Blob([await response.text()], { type: 'application/javascript' });
-        const blobUrl = URL.createObjectURL(blob);
-        this.worker = new Worker(blobUrl);
-        URL.revokeObjectURL(blobUrl);
+  private async _doInit(): Promise<void> {
+    try {
+      // Web Workers can't load cross-origin scripts directly.
+      // Fetch the script as a blob and create a same-origin Worker.
+      const response = await fetch(STOCKFISH_CDN);
+      if (!response.ok) throw new Error(`Failed to fetch Stockfish: ${response.status}`);
+      const blob = new Blob([await response.text()], { type: 'application/javascript' });
+      const blobUrl = URL.createObjectURL(blob);
+      this.worker = new Worker(blobUrl);
+      URL.revokeObjectURL(blobUrl);
 
-        this.worker.onmessage = (event: MessageEvent) => {
+      // Wait for 'uciok' response
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          this.state = 'idle';
+          reject(new Error('Stockfish init timeout'));
+        }, 15000);
+
+        this.worker!.onmessage = (event: MessageEvent) => {
           const line = typeof event.data === 'string' ? event.data : String(event.data);
-          this.handleMessage(line);
-        };
-
-        this.worker.onerror = (err) => {
-          console.error('[Stockfish] Worker error:', err);
-          if (this.state === 'loading') {
-            this.state = 'idle';
-            reject(new Error('Failed to load Stockfish worker'));
-          }
-        };
-
-        // Send UCI init
-        this.worker.postMessage('uci');
-
-        // Wait for 'uciok'
-        const originalHandler = this.worker.onmessage;
-        this.worker.onmessage = (event: MessageEvent) => {
-          const line = typeof event.data === 'string' ? event.data : String(event.data);
-          if (line === 'uciok') {
+          console.log('[Stockfish]', line);
+          if (line.includes('uciok')) {
+            clearTimeout(timeout);
             this.state = 'ready';
-            this.worker!.onmessage = originalHandler;
+            // Switch to permanent message handler
+            this.worker!.onmessage = (e: MessageEvent) => {
+              const msg = typeof e.data === 'string' ? e.data : String(e.data);
+              this.handleMessage(msg);
+            };
             resolve();
           }
         };
 
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          if (this.state === 'loading') {
-            this.state = 'idle';
-            reject(new Error('Stockfish init timeout'));
-          }
-        }, 10000);
-      } catch (err) {
-        this.state = 'idle';
-        reject(err);
-      }
-      })();
-    });
+        this.worker!.onerror = (err) => {
+          console.error('[Stockfish] Worker error:', err);
+          clearTimeout(timeout);
+          this.state = 'idle';
+          reject(new Error('Failed to load Stockfish worker'));
+        };
+
+        this.worker!.postMessage('uci');
+      });
+    } catch (err) {
+      this.state = 'idle';
+      this.initPromise = null;
+      throw err;
+    }
   }
 
   async getBestMove(fen: string, skillLevel: number = 5): Promise<string> {
