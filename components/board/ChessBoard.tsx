@@ -1,15 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import SquareComponent from './Square';
 import { useGameStore } from '@/stores/gameStore';
 import type { Square } from '@/lib/chess/types';
 
+const isWeb = Platform.OS === 'web';
+// Lazy import om circular deps te voorkomen
+const EffectsOverlay = isWeb ? require('./EffectsOverlay').default : null;
+
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
-const BOARD_BORDER_COLOR = '#5C4A2E';
-const BOARD_OUTER_COLOR = '#3D2E16';
-const COORD_COLOR = '#C4A96A';
+const BOARD_BORDER_COLOR = '#4A8B6E';
+const BOARD_OUTER_COLOR = '#2D5A48';
+const COORD_COLOR = '#B8D8C8';
 
 export default function ChessBoard() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -68,8 +72,8 @@ export default function ChessBoard() {
             ))}
           </View>
 
-          {/* Board with inner border */}
-          <View style={styles.innerFrame}>
+          {/* Board with inner border + effects overlay */}
+          <View style={[styles.innerFrame, { position: 'relative' }]}>
             <View style={[styles.board, { width: boardSize, height: boardSize }]}>
               {[0, 1, 2, 3, 4, 5, 6, 7].map((displayRow) => {
                 const r = boardFlipped ? 7 - displayRow : displayRow;
@@ -102,6 +106,8 @@ export default function ChessBoard() {
                 );
               })}
             </View>
+            {/* 3D effects overlay (transparant, bovenop het bord) */}
+            {isWeb && EffectsOverlay && <EffectsOverlay boardSize={boardSize} />}
           </View>
 
           {/* Right rank labels */}

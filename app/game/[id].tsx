@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, SafeAreaView, useWindowDimensions } from 'react-native';
 import { router, Stack } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import ChessBoard3D from '@/components/board/ChessBoard3D';
+import ChessBoard from '@/components/board/ChessBoard';
 import PromotionModal from '@/components/board/PromotionModal';
 import { useGameStore } from '@/stores/gameStore';
 import { AppColors } from '@/constants/Colors';
@@ -60,9 +60,9 @@ export default function GameScreen() {
         </View>
       )}
 
-      {/* 3D Board — zo groot mogelijk */}
+      {/* 2D Board met 3D effects overlay */}
       <View style={styles.boardArea}>
-        <ChessBoard3D />
+        <ChessBoard />
       </View>
 
       {/* Minimale bottom bar */}

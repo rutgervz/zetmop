@@ -2,8 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { PieceSymbol, Color } from '@/lib/chess/types';
 
-// Using Unicode chess pieces with styled rendering for depth
-const PIECE_SYMBOLS: Record<PieceSymbol, string> = {
+// Witte stukken: open symbolen (met vulling), zwarte: gevulde symbolen
+const WHITE_SYMBOLS: Record<PieceSymbol, string> = {
+  k: '\u2654',
+  q: '\u2655',
+  r: '\u2656',
+  b: '\u2657',
+  n: '\u2658',
+  p: '\u2659',
+};
+const BLACK_SYMBOLS: Record<PieceSymbol, string> = {
   k: '\u265A',
   q: '\u265B',
   r: '\u265C',
@@ -19,9 +27,9 @@ type PieceProps = {
 };
 
 export default function Piece({ type, color, size }: PieceProps) {
-  const symbol = PIECE_SYMBOLS[type];
-  const fontSize = size * 0.75;
   const isWhite = color === 'w';
+  const symbol = isWhite ? WHITE_SYMBOLS[type] : BLACK_SYMBOLS[type];
+  const fontSize = size * 0.82;
 
   return (
     <View style={styles.container}>
@@ -32,8 +40,8 @@ export default function Piece({ type, color, size }: PieceProps) {
           {
             fontSize,
             lineHeight: size,
-            color: 'rgba(0,0,0,0.35)',
-            transform: [{ translateX: 1.5 }, { translateY: 1.5 }],
+            color: 'rgba(0,0,0,0.3)',
+            transform: [{ translateX: 1.2 }, { translateY: 1.2 }],
           },
         ]}
         allowFontScaling={false}
@@ -47,7 +55,7 @@ export default function Piece({ type, color, size }: PieceProps) {
           {
             fontSize,
             lineHeight: size,
-            color: isWhite ? '#FFEEDD' : '#1A1A1A',
+            color: isWhite ? '#FFFFFF' : '#1A1A1A',
           },
           isWhite && styles.whitePiece,
           !isWhite && styles.blackPiece,
@@ -74,13 +82,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   whitePiece: {
-    textShadowColor: 'rgba(0, 0, 0, 0.6)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 3,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   blackPiece: {
-    textShadowColor: 'rgba(255, 255, 255, 0.15)',
+    textShadowColor: 'rgba(255, 255, 255, 0.2)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 2,
+    textShadowRadius: 3,
   },
 });
