@@ -15,6 +15,8 @@ export default function GameScreen() {
   const [phase, setPhase] = useState<'setup' | 'playing'>('setup');
   const [nameWhite, setNameWhite] = useState('');
   const [nameBlack, setNameBlack] = useState(mode === 'ai' ? 'Computer' : '');
+  const [aiLevel, setAiLevelLocal] = useState(5);
+  const setAiLevel = useGameStore((s) => s.setAiLevel);
 
   const turn = useGameStore((s) => s.turn);
   const status = useGameStore((s) => s.status);
@@ -39,9 +41,18 @@ export default function GameScreen() {
     const white = nameWhite.trim() || 'Wit';
     const black = mode === 'ai' ? 'Computer' : (nameBlack.trim() || 'Zwart');
     setPlayerNames(white, black);
+    if (mode === 'ai') setAiLevel(aiLevel);
     newGame(mode);
     setPhase('playing');
   };
+
+  const AI_LEVELS = [
+    { value: 1, label: 'Beginner', emoji: '🐣' },
+    { value: 5, label: 'Makkelijk', emoji: '🐥' },
+    { value: 10, label: 'Gemiddeld', emoji: '🦊' },
+    { value: 15, label: 'Moeilijk', emoji: '🐺' },
+    { value: 20, label: 'Meester', emoji: '🐉' },
+  ];
 
   // Setup scherm: namen invullen
   if (phase === 'setup') {
@@ -94,6 +105,32 @@ export default function GameScreen() {
                 <View style={styles.aiLabel}>
                   <FontAwesome name="desktop" size={16} color={AppColors.accent} />
                   <Text style={styles.aiText}>Computer</Text>
+                </View>
+              </View>
+            )}
+
+            {mode === 'ai' && (
+              <View style={styles.levelSection}>
+                <Text style={styles.levelTitle}>Hoe sterk?</Text>
+                <View style={styles.levelButtons}>
+                  {AI_LEVELS.map((lvl) => (
+                    <Pressable
+                      key={lvl.value}
+                      style={[
+                        styles.levelBtn,
+                        aiLevel === lvl.value && styles.levelBtnActive,
+                      ]}
+                      onPress={() => setAiLevelLocal(lvl.value)}
+                    >
+                      <Text style={styles.levelEmoji}>{lvl.emoji}</Text>
+                      <Text style={[
+                        styles.levelLabel,
+                        aiLevel === lvl.value && styles.levelLabelActive,
+                      ]}>
+                        {lvl.label}
+                      </Text>
+                    </Pressable>
+                  ))}
                 </View>
               </View>
             )}
@@ -251,6 +288,46 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     padding: 0,
+  },
+  levelSection: {
+    marginTop: 8,
+  },
+  levelTitle: {
+    color: AppColors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  levelButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  levelBtn: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: AppColors.surface,
+    minWidth: 62,
+  },
+  levelBtnActive: {
+    backgroundColor: AppColors.primary + '30',
+    borderWidth: 2,
+    borderColor: AppColors.primary,
+  },
+  levelEmoji: {
+    fontSize: 22,
+    marginBottom: 4,
+  },
+  levelLabel: {
+    color: AppColors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  levelLabelActive: {
+    color: AppColors.primary,
   },
   aiLabel: {
     flex: 1,
