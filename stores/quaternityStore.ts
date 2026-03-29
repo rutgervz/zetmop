@@ -11,7 +11,6 @@ export type QuaterPiece = {
 export type QuaterEvent =
   | { type: 'move'; color: QuaterColor }
   | { type: 'capture'; color: QuaterColor; captured: QuaterPiece }
-  | { type: 'check'; color: QuaterColor; kingCol: number; kingRow: number }
   | { type: 'elimination'; eliminated: QuaterColor }
   | { type: 'promotion'; color: QuaterColor; piece: PieceSymbol }
   | { type: 'finished'; winner: QuaterColor };
@@ -29,148 +28,138 @@ type QuaternityState = {
   playerNames: Record<QuaterColor, string>;
   moveHistory: string[];
 
-  // Actions
   newGame: () => void;
   selectSquare: (col: number, row: number) => void;
   undoMove: () => void;
   setPlayerNames: (names: Record<QuaterColor, string>) => void;
 };
 
-// Board helpers
-function isInvalidSquare(col: number, row: number): boolean {
-  const inLeft = col <= 2;
-  const inRight = col >= 11;
-  const inTop = row <= 2;
-  const inBottom = row >= 11;
-  return (inLeft && inTop) || (inRight && inTop) || (inLeft && inBottom) || (inRight && inBottom);
-}
-
+/**
+ * Quaternity: 8x8 bord, 4 spelers in de hoeken.
+ *
+ * Wit (linksonder):  rij 0-2, kolom 0-3
+ * Rood (linksboven): rij 5-7, kolom 0-3
+ * Zwart (rechtsboven): rij 5-7, kolom 4-7
+ * Groen (rechtsonder): rij 0-2, kolom 4-7
+ *
+ * Opstelling per speler (driehoekig, stukken naar het midden gericht):
+ *
+ * Wit (linksonder):
+ *   rij 0: R  N  B  Q    (achterste rij)
+ *   rij 1: .  N  B  K
+ *   rij 2: P  P  P  P    (pionnen, gaan omhoog)
+ *
+ * Groen (rechtsonder):
+ *   rij 0: Q  B  N  R
+ *   rij 1: K  B  N  .
+ *   rij 2: P  P  P  P    (pionnen, gaan omhoog)
+ *
+ * Rood (linksboven):
+ *   rij 5: P  P  P  P    (pionnen, gaan omlaag)
+ *   rij 6: K  B  N  .
+ *   rij 7: R  N  B  Q
+ *
+ * Zwart (rechtsboven):
+ *   rij 5: P  P  P  P    (pionnen, gaan omlaag)
+ *   rij 6: .  N  B  K
+ *   rij 7: Q  B  N  R
+ */
 function createInitialBoard(): (QuaterPiece | null)[][] {
-  const board: (QuaterPiece | null)[][] = Array.from({ length: 14 }, () =>
-    Array.from({ length: 14 }, () => null)
+  const b: (QuaterPiece | null)[][] = Array.from({ length: 8 }, () =>
+    Array.from({ length: 8 }, () => null)
   );
 
-  const placePieces = (
-    color: QuaterColor,
-    backRank: [number, number][],
-    pawnRank: [number, number][],
-    pieces: PieceSymbol[]
-  ) => {
-    pieces.forEach((type, i) => {
-      const [col, row] = backRank[i];
-      board[row][col] = { type, color };
-    });
-    pawnRank.forEach(([col, row]) => {
-      board[row][col] = { type: 'p', color };
-    });
+  const set = (row: number, col: number, type: PieceSymbol, color: QuaterColor) => {
+    b[row][col] = { type, color };
   };
 
-  // South (white) — rows 0-1 (internal), cols 3-10
-  const southPieces: PieceSymbol[] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
-  const southBack: [number, number][] = Array.from({ length: 8 }, (_, i) => [i + 3, 0]);
-  const southPawns: [number, number][] = Array.from({ length: 8 }, (_, i) => [i + 3, 1]);
-  placePieces('w', southBack, southPawns, southPieces);
+  // Wit (linksonder)
+  set(0, 0, 'r', 'w'); set(0, 1, 'n', 'w'); set(0, 2, 'b', 'w'); set(0, 3, 'q', 'w');
+  set(1, 1, 'n', 'w'); set(1, 2, 'b', 'w'); set(1, 3, 'k', 'w');
+  set(2, 0, 'p', 'w'); set(2, 1, 'p', 'w'); set(2, 2, 'p', 'w'); set(2, 3, 'p', 'w');
 
-  // North (black) — rows 13-12 (internal), cols 3-10
-  const northPieces: PieceSymbol[] = ['r', 'n', 'b', 'k', 'q', 'b', 'n', 'r'];
-  const northBack: [number, number][] = Array.from({ length: 8 }, (_, i) => [i + 3, 13]);
-  const northPawns: [number, number][] = Array.from({ length: 8 }, (_, i) => [i + 3, 12]);
-  placePieces('b', northBack, northPawns, northPieces);
+  // Groen (rechtsonder)
+  set(0, 4, 'q', 'g'); set(0, 5, 'b', 'g'); set(0, 6, 'n', 'g'); set(0, 7, 'r', 'g');
+  set(1, 4, 'k', 'g'); set(1, 5, 'b', 'g'); set(1, 6, 'n', 'g');
+  set(2, 4, 'p', 'g'); set(2, 5, 'p', 'g'); set(2, 6, 'p', 'g'); set(2, 7, 'p', 'g');
 
-  // West (red) — cols 0-1, rows 3-10
-  const westPieces: PieceSymbol[] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
-  const westBack: [number, number][] = Array.from({ length: 8 }, (_, i) => [0, i + 3]);
-  const westPawns: [number, number][] = Array.from({ length: 8 }, (_, i) => [1, i + 3]);
-  placePieces('r', westBack, westPawns, westPieces);
+  // Rood (linksboven)
+  set(5, 0, 'p', 'r'); set(5, 1, 'p', 'r'); set(5, 2, 'p', 'r'); set(5, 3, 'p', 'r');
+  set(6, 0, 'k', 'r'); set(6, 1, 'b', 'r'); set(6, 2, 'n', 'r');
+  set(7, 0, 'r', 'r'); set(7, 1, 'n', 'r'); set(7, 2, 'b', 'r'); set(7, 3, 'q', 'r');
 
-  // East (green) — cols 13-12, rows 3-10
-  const eastPieces: PieceSymbol[] = ['r', 'n', 'b', 'k', 'q', 'b', 'n', 'r'];
-  const eastBack: [number, number][] = Array.from({ length: 8 }, (_, i) => [13, i + 3]);
-  const eastPawns: [number, number][] = Array.from({ length: 8 }, (_, i) => [12, i + 3]);
-  placePieces('g', eastBack, eastPawns, eastPieces);
+  // Zwart (rechtsboven)
+  set(5, 4, 'p', 'b'); set(5, 5, 'p', 'b'); set(5, 6, 'p', 'b'); set(5, 7, 'p', 'b');
+  set(6, 5, 'n', 'b'); set(6, 6, 'b', 'b'); set(6, 7, 'k', 'b');
+  set(7, 4, 'q', 'b'); set(7, 5, 'b', 'b'); set(7, 6, 'n', 'b'); set(7, 7, 'r', 'b');
 
-  return board;
+  return b;
 }
 
-// Simple move generation (no check validation yet — will be replaced by engine)
+// Pionrichting: wit en groen gaan omhoog (+row), rood en zwart gaan omlaag (-row)
+function pawnDir(color: QuaterColor): number {
+  return (color === 'w' || color === 'g') ? 1 : -1;
+}
+
+function pawnStartRow(color: QuaterColor): number {
+  return (color === 'w' || color === 'g') ? 2 : 5;
+}
+
 function isOnBoard(col: number, row: number): boolean {
-  return col >= 0 && col < 14 && row >= 0 && row < 14 && !isInvalidSquare(col, row);
-}
-
-function getPawnDirection(color: QuaterColor): { dc: number; dr: number } {
-  switch (color) {
-    case 'w': return { dc: 0, dr: 1 };   // up
-    case 'b': return { dc: 0, dr: -1 };  // down
-    case 'r': return { dc: 1, dr: 0 };   // right
-    case 'g': return { dc: -1, dr: 0 };  // left
-  }
-}
-
-function getPawnStartRow(color: QuaterColor): (col: number, row: number) => boolean {
-  switch (color) {
-    case 'w': return (_, row) => row === 1;
-    case 'b': return (_, row) => row === 12;
-    case 'r': return (col, _) => col === 1;
-    case 'g': return (col, _) => col === 12;
-  }
+  return col >= 0 && col < 8 && row >= 0 && row < 8;
 }
 
 function generateMoves(
   board: (QuaterPiece | null)[][],
   col: number,
   row: number,
-  color: QuaterColor,
-  type: PieceSymbol
 ): { col: number; row: number }[] {
+  const piece = board[row][col];
+  if (!piece) return [];
+  const { type, color } = piece;
   const moves: { col: number; row: number }[] = [];
-  const canMove = (c: number, r: number) => isOnBoard(c, r) && !board[r][c];
-  const canCapture = (c: number, r: number) =>
-    isOnBoard(c, r) && board[r][c] !== null && board[r][c]!.color !== color;
-  const canMoveOrCapture = (c: number, r: number) => canMove(c, r) || canCapture(c, r);
+
+  const empty = (c: number, r: number) => isOnBoard(c, r) && !board[r][c];
+  const enemy = (c: number, r: number) => isOnBoard(c, r) && board[r][c] !== null && board[r][c]!.color !== color;
+  const moveOrCapture = (c: number, r: number) => {
+    if (empty(c, r) || enemy(c, r)) moves.push({ col: c, row: r });
+  };
 
   if (type === 'p') {
-    const { dc, dr } = getPawnDirection(color);
-    const isStart = getPawnStartRow(color);
-    // One step
-    if (canMove(col + dc, row + dr)) {
-      moves.push({ col: col + dc, row: row + dr });
-      // Two steps from start
-      if (isStart(col, row) && canMove(col + dc * 2, row + dr * 2)) {
-        moves.push({ col: col + dc * 2, row: row + dr * 2 });
+    const dir = pawnDir(color);
+    const startRow = pawnStartRow(color);
+    // Eén stap
+    if (empty(col, row + dir)) {
+      moves.push({ col, row: row + dir });
+      // Twee stappen vanaf startrij
+      if (row === startRow && empty(col, row + dir * 2)) {
+        moves.push({ col, row: row + dir * 2 });
       }
     }
-    // Captures (diagonal relative to pawn direction)
-    if (dc === 0) {
-      // vertical pawn: captures on (col-1, row+dr) and (col+1, row+dr)
-      if (canCapture(col - 1, row + dr)) moves.push({ col: col - 1, row: row + dr });
-      if (canCapture(col + 1, row + dr)) moves.push({ col: col + 1, row: row + dr });
-    } else {
-      // horizontal pawn: captures on (col+dc, row-1) and (col+dc, row+1)
-      if (canCapture(col + dc, row - 1)) moves.push({ col: col + dc, row: row - 1 });
-      if (canCapture(col + dc, row + 1)) moves.push({ col: col + dc, row: row + 1 });
-    }
+    // Captures diagonaal
+    if (enemy(col - 1, row + dir)) moves.push({ col: col - 1, row: row + dir });
+    if (enemy(col + 1, row + dir)) moves.push({ col: col + 1, row: row + dir });
   } else if (type === 'n') {
-    const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
-    for (const [dc, dr] of knightMoves) {
-      if (canMoveOrCapture(col + dc, row + dr)) moves.push({ col: col + dc, row: row + dr });
+    for (const [dc, dr] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+      moveOrCapture(col + dc, row + dr);
     }
   } else if (type === 'k') {
     for (let dc = -1; dc <= 1; dc++) {
       for (let dr = -1; dr <= 1; dr++) {
         if (dc === 0 && dr === 0) continue;
-        if (canMoveOrCapture(col + dc, row + dr)) moves.push({ col: col + dc, row: row + dr });
+        moveOrCapture(col + dc, row + dr);
       }
     }
   } else {
-    // Sliding pieces: r (straights), b (diagonals), q (both)
-    const directions: [number, number][] = [];
-    if (type === 'r' || type === 'q') directions.push([0,1],[0,-1],[1,0],[-1,0]);
-    if (type === 'b' || type === 'q') directions.push([1,1],[1,-1],[-1,1],[-1,-1]);
-    for (const [dc, dr] of directions) {
-      for (let i = 1; i < 14; i++) {
+    // Sliding: r=straight, b=diagonal, q=both
+    const dirs: [number, number][] = [];
+    if (type === 'r' || type === 'q') dirs.push([0,1],[0,-1],[1,0],[-1,0]);
+    if (type === 'b' || type === 'q') dirs.push([1,1],[1,-1],[-1,1],[-1,-1]);
+    for (const [dc, dr] of dirs) {
+      for (let i = 1; i < 8; i++) {
         const nc = col + dc * i, nr = row + dr * i;
         if (!isOnBoard(nc, nr)) break;
-        if (board[nr][nc] === null) {
+        if (!board[nr][nc]) {
           moves.push({ col: nc, row: nr });
         } else {
           if (board[nr][nc]!.color !== color) moves.push({ col: nc, row: nr });
@@ -179,17 +168,16 @@ function generateMoves(
       }
     }
   }
-
   return moves;
 }
 
 const TURN_ORDER: QuaterColor[] = ['w', 'r', 'b', 'g'];
 
-function nextTurn(current: QuaterColor, activePlayers: QuaterColor[]): QuaterColor {
+function nextTurn(current: QuaterColor, active: QuaterColor[]): QuaterColor {
   const idx = TURN_ORDER.indexOf(current);
   for (let i = 1; i <= 4; i++) {
     const next = TURN_ORDER[(idx + i) % 4];
-    if (activePlayers.includes(next)) return next;
+    if (active.includes(next)) return next;
   }
   return current;
 }
@@ -226,72 +214,62 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
     const { board, turn, selectedSquare, legalMoves, activePlayers, status } = get();
     if (status === 'finished') return;
 
-    // If a legal move target is tapped, execute the move
+    // Zet uitvoeren als legaal doel is aangeklikt
     if (selectedSquare && legalMoves.some((m) => m.col === col && m.row === row)) {
-      const fromCol = selectedSquare.col;
-      const fromRow = selectedSquare.row;
+      const fc = selectedSquare.col, fr = selectedSquare.row;
       const newBoard = board.map((r) => [...r]);
       const captured = newBoard[row][col];
-      const piece = newBoard[fromRow][fromCol]!;
+      const piece = newBoard[fr][fc]!;
       newBoard[row][col] = piece;
-      newBoard[fromRow][fromCol] = null;
+      newBoard[fr][fc] = null;
 
       let event: QuaterEvent = { type: 'move', color: turn };
-      let newActivePlayers = [...activePlayers];
+      let newActive = [...activePlayers];
       let newStatus = 'playing';
       let newWinner: QuaterColor | null = null;
 
       if (captured) {
         event = { type: 'capture', color: turn, captured };
-        // If a king is captured, that player is eliminated
+        // Koning geslagen = speler uitgeschakeld
         if (captured.type === 'k') {
-          newActivePlayers = newActivePlayers.filter((c) => c !== captured.color);
-          // Remove all pieces of eliminated player
-          for (let r = 0; r < 14; r++) {
-            for (let c = 0; c < 14; c++) {
-              if (newBoard[r][c]?.color === captured.color) {
-                newBoard[r][c] = null;
-              }
+          newActive = newActive.filter((c) => c !== captured.color);
+          // Alle stukken van uitgeschakelde speler verwijderen
+          for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+              if (newBoard[r][c]?.color === captured.color) newBoard[r][c] = null;
             }
           }
           event = { type: 'elimination', eliminated: captured.color };
-
-          // Check if game is over
-          if (newActivePlayers.length === 1) {
+          if (newActive.length === 1) {
             newStatus = 'finished';
-            newWinner = newActivePlayers[0];
+            newWinner = newActive[0];
             event = { type: 'finished', winner: newWinner };
           }
         }
       }
 
-      // Pawn promotion (simplified: auto-promote to queen)
-      const { dc, dr } = getPawnDirection(turn);
+      // Promotie (auto naar dame)
       if (piece.type === 'p') {
-        const atEnd = (
-          (turn === 'w' && row >= 12) ||
-          (turn === 'b' && row <= 1) ||
-          (turn === 'r' && col >= 12) ||
-          (turn === 'g' && col <= 1)
-        );
-        if (atEnd) {
+        const dir = pawnDir(turn);
+        const promoRow = dir === 1 ? 7 : 0;
+        if (row === promoRow) {
           newBoard[row][col] = { type: 'q', color: turn };
           event = { type: 'promotion', color: turn, piece: 'q' };
         }
       }
 
-      const newTurn = newStatus === 'finished' ? turn : nextTurn(turn, newActivePlayers);
-
-      const moveStr = `${String.fromCharCode(97 + fromCol)}${fromRow + 1}→${String.fromCharCode(97 + col)}${row + 1}`;
+      const newTurn = newStatus === 'finished' ? turn : nextTurn(turn, newActive);
+      const files = 'abcdefgh';
+      const moveStr = `${files[fc]}${fr + 1}→${files[col]}${row + 1}`;
 
       set({
         board: newBoard,
         turn: newTurn,
-        activePlayers: newActivePlayers,
+        activePlayers: newActive,
         status: newStatus,
         selectedSquare: null,
         legalMoves: [],
-        lastMove: { fromCol, fromRow, toCol: col, toRow: row },
+        lastMove: { fromCol: fc, fromRow: fr, toCol: col, toRow: row },
         lastEvent: event,
         winner: newWinner,
         moveHistory: [...get().moveHistory, moveStr],
@@ -299,27 +277,18 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
       return;
     }
 
-    // If tapping own piece, select it and show legal moves
+    // Eigen stuk selecteren
     const piece = board[row]?.[col];
     if (piece && piece.color === turn) {
-      const moves = generateMoves(board, col, row, turn, piece.type);
-      set({
-        selectedSquare: { col, row },
-        legalMoves: moves,
-      });
+      const moves = generateMoves(board, col, row);
+      set({ selectedSquare: { col, row }, legalMoves: moves });
       return;
     }
 
-    // Deselect
     set({ selectedSquare: null, legalMoves: [] });
   },
 
-  undoMove: () => {
-    // Simplified: just restart for now
-    // Full undo would need move history stack
-  },
+  undoMove: () => {},
 
-  setPlayerNames: (names: Record<QuaterColor, string>) => {
-    set({ playerNames: names });
-  },
+  setPlayerNames: (names) => set({ playerNames: names }),
 }));
