@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, useWindowDimensions, Platform } from 'react-native';
 import { useGameStore } from '@/stores/gameStore';
+import { EffectsSystem } from './effects';
 import type { Square, PieceSymbol, Color } from '@/lib/chess/types';
 
 const isWeb = Platform.OS === 'web';
@@ -140,6 +141,8 @@ export default function ChessBoard3D() {
   const lastMove = useGameStore((s) => s.lastMove);
   const status = useGameStore((s) => s.status);
   const turn = useGameStore((s) => s.turn);
+  const lastEvent = useGameStore((s) => s.lastEvent);
+  const lastEventRef = useRef(lastEvent);
 
   // Init scene once
   useEffect(() => {
@@ -260,18 +263,32 @@ export default function ChessBoard3D() {
       }, { passive: false });
       canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-      // Store scene ref
-      sceneRef.current = { THREE, renderer, scene, camera, squareMap, dynamicObjects: [] as any[], theta: () => theta, phi: () => phi, radius: () => radius };
+      // Effects systeem
+      const effects = new EffectsSystem(THREE, scene);
 
-      // Render loop
+      // Store scene ref
+      sceneRef.current = { THREE, renderer, scene, camera, squareMap, effects, dynamicObjects: [] as any[], theta: () => theta, phi: () => phi, radius: () => radius };
+
+      // Render loop met delta time
+      let lastTime = performance.now();
       const animate = () => {
         if (disposed) return;
         requestAnimationFrame(animate);
+
+        const now = performance.now();
+        const dt = Math.min((now - lastTime) / 1000, 0.05); // cap op 50ms
+        lastTime = now;
+
+        // Camera orbit
         const t = theta, p = phi, r = radius;
         camera.position.x += (r * Math.sin(p) * Math.sin(t) - camera.position.x) * 0.08;
         camera.position.y += (r * Math.cos(p) - camera.position.y) * 0.08;
         camera.position.z += (r * Math.sin(p) * Math.cos(t) - camera.position.z) * 0.08;
         camera.lookAt(0, 0, 0);
+
+        // Update effects (particles, shockwaves, glows)
+        effects.update(dt, camera);
+
         renderer.render(scene, camera);
       };
       animate();
@@ -280,7 +297,10 @@ export default function ChessBoard3D() {
 
     return () => {
       disposed = true;
-      if (sceneRef.current) sceneRef.current.renderer.dispose();
+      if (sceneRef.current) {
+        sceneRef.current.effects.dispose();
+        sceneRef.current.renderer.dispose();
+      }
     };
   }, [size]);
 
@@ -349,6 +369,17 @@ export default function ChessBoard3D() {
       }
     }
   }, [ready, board, selectedSquare, legalMoves, lastMove, status, turn]);
+
+  // Trigger 3D effecten bij game events
+  useEffect(() => {
+    if (!ready || !sceneRef.current) return;
+    if (lastEvent === lastEventRef.current) return;
+    lastEventRef.current = lastEvent;
+
+    if (lastEvent) {
+      sceneRef.current.effects.handleEvent(lastEvent);
+    }
+  }, [ready, lastEvent]);
 
   if (!isWeb) {
     const ChessBoard = require('./ChessBoard').default;
