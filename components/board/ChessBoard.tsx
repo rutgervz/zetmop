@@ -28,7 +28,7 @@ export default function ChessBoard() {
 
   // Bord zo groot mogelijk: minimale marges, coördinaten compact
   const coordSize = 18;
-  const maxSize = Math.min(windowWidth - 4, windowHeight - 100);
+  const maxSize = Math.min(windowWidth - 4, windowHeight - 56);
   const boardSize = Math.floor((maxSize - coordSize * 2) / 8) * 8;
   const squareSize = boardSize / 8;
 

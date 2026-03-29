@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   },
   boardArea: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   bottomBar: {
     paddingHorizontal: 12,
