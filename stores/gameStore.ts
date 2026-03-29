@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { GameEngine } from '@/lib/chess/rules';
+import { getStockfish, parseUciMove } from '@/lib/chess/stockfish';
 import type { Square, Move, PieceSymbol, Color, GameStatus, GameEvent, PieceType, GameMode } from '@/lib/chess/types';
 
 type GameState = {
@@ -17,6 +18,8 @@ type GameState = {
   playerBlack: string;
   boardFlipped: boolean;
   pendingPromotion: { from: Square; to: Square } | null;
+  aiLevel: number;
+  aiThinking: boolean;
 
   // Actions
   newGame: (mode?: GameMode) => void;
@@ -28,6 +31,7 @@ type GameState = {
   setPromotion: (piece: PieceSymbol) => void;
   cancelPromotion: () => void;
   setPlayerNames: (white: string, black: string) => void;
+  setAiLevel: (level: number) => void;
 };
 
 const engine = new GameEngine();
@@ -47,10 +51,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   playerBlack: 'Zwart',
   boardFlipped: false,
   pendingPromotion: null,
+  aiLevel: 5,
+  aiThinking: false,
 
   newGame: (mode = 'local') => {
     const { engine } = get();
     engine.newGame();
+
+    // Pre-init Stockfish when starting an AI game
+    if (mode === 'ai') {
+      const sf = getStockfish();
+      sf.init().catch((err) => console.warn('[Stockfish] Init failed:', err));
+    }
+
     set({
       board: engine.getBoard(),
       turn: 'w',
@@ -63,6 +76,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       gameMode: mode,
       boardFlipped: false,
       pendingPromotion: null,
+      aiThinking: false,
+      playerWhite: mode === 'ai' ? 'Jij' : 'Wit',
+      playerBlack: mode === 'ai' ? 'Computer' : 'Zwart',
     });
   },
 
@@ -108,10 +124,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const event = engine.makeMove(from, to, promotion);
     if (!event) return;
 
+    const newStatus = engine.getStatus();
+
     set({
       board: engine.getBoard(),
       turn: engine.getTurn(),
-      status: engine.getStatus(),
+      status: newStatus,
       selectedSquare: null,
       legalMoves: [],
       moveHistory: engine.getHistorySan(),
@@ -119,6 +137,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastEvent: event,
       pendingPromotion: null,
     });
+
+    // After human (white) moves in AI mode, trigger AI response
+    const { gameMode } = get();
+    if (
+      gameMode === 'ai' &&
+      engine.getTurn() === 'b' &&
+      !engine.isGameOver()
+    ) {
+      triggerAiMove();
+    }
   },
 
   setPromotion: (piece: PieceSymbol) => {
@@ -167,4 +195,66 @@ export const useGameStore = create<GameState>((set, get) => ({
   setPlayerNames: (white: string, black: string) => {
     set({ playerWhite: white, playerBlack: black });
   },
+
+  setAiLevel: (level: number) => {
+    set({ aiLevel: Math.max(0, Math.min(20, Math.round(level))) });
+  },
 }));
+
+/**
+ * Trigger an AI move after a short delay.
+ * Runs outside the store to avoid async issues in Zustand actions.
+ */
+function triggerAiMove(): void {
+  const store = useGameStore.getState();
+  if (store.aiThinking) return;
+
+  useGameStore.setState({ aiThinking: true });
+
+  // Small delay so the human move visually settles first
+  setTimeout(async () => {
+    try {
+      const { engine, aiLevel, gameMode } = useGameStore.getState();
+      if (gameMode !== 'ai' || engine.isGameOver()) {
+        useGameStore.setState({ aiThinking: false });
+        return;
+      }
+
+      const fen = engine.getFen();
+      const sf = getStockfish();
+      await sf.init();
+
+      const uciMove = await sf.getBestMove(fen, aiLevel);
+      const { from, to, promotion } = parseUciMove(uciMove);
+
+      // Verify game is still in AI mode and it's still black's turn
+      const current = useGameStore.getState();
+      if (current.gameMode !== 'ai' || current.turn !== 'b' || current.engine.isGameOver()) {
+        useGameStore.setState({ aiThinking: false });
+        return;
+      }
+
+      // Execute the AI move through the store's makeMove
+      // But we need to avoid re-triggering AI, so we do the move directly
+      const event = engine.makeMove(from as any, to as any, promotion as any);
+      if (event) {
+        useGameStore.setState({
+          board: engine.getBoard(),
+          turn: engine.getTurn(),
+          status: engine.getStatus(),
+          selectedSquare: null,
+          legalMoves: [],
+          moveHistory: engine.getHistorySan(),
+          lastMove: { from: from as any, to: to as any },
+          lastEvent: event,
+          aiThinking: false,
+        });
+      } else {
+        useGameStore.setState({ aiThinking: false });
+      }
+    } catch (err) {
+      console.warn('[AI] Move failed:', err);
+      useGameStore.setState({ aiThinking: false });
+    }
+  }, 500);
+}

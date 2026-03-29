@@ -33,8 +33,10 @@ export default function PlayScreen() {
       subtitle: 'Speel tegen Stockfish AI',
       icon: 'desktop',
       color: AppColors.accent,
-      onPress: () => {},
-      disabled: true,
+      onPress: () => {
+        newGame('ai');
+        router.push('/game/ai');
+      },
     },
     {
       title: 'Online spelen',

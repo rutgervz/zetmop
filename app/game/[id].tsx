@@ -25,6 +25,7 @@ export default function GameScreen() {
   const newGame = useGameStore((s) => s.newGame);
   const setPlayerNames = useGameStore((s) => s.setPlayerNames);
   const lastEvent = useGameStore((s) => s.lastEvent);
+  const aiThinking = useGameStore((s) => s.aiThinking);
 
   const isGameOver = ['checkmate', 'stalemate', 'draw', 'resigned'].includes(status);
   const winner =
@@ -135,7 +136,12 @@ export default function GameScreen() {
       </SafeAreaView>
 
       {/* Status */}
-      {status !== 'playing' && (
+      {aiThinking && (
+        <View style={styles.statusBar}>
+          <Text style={styles.thinkingText}>Computer denkt na...</Text>
+        </View>
+      )}
+      {!aiThinking && status !== 'playing' && (
         <View style={styles.statusBar}>
           <Text style={styles.statusText}>
             {status === 'check' && 'Schaak!'}
@@ -326,6 +332,12 @@ const styles = StyleSheet.create({
     color: AppColors.gold,
     fontSize: 14,
     fontWeight: '600',
+  },
+  thinkingText: {
+    color: AppColors.accent,
+    fontSize: 14,
+    fontWeight: '500',
+    fontStyle: 'italic',
   },
   boardArea: {
     flex: 1,
