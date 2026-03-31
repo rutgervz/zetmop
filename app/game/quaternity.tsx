@@ -117,11 +117,11 @@ export default function QuaternityScreen() {
         <View style={{ width: 18 }} />
       </SafeAreaView>
 
-      {/* Eliminatie melding */}
-      {lastEvent?.type === 'elimination' && (
+      {/* Schaakmat melding */}
+      {lastEvent?.type === 'checkmate' && (
         <View style={styles.statusBar}>
           <Text style={styles.statusText}>
-            {playerNames[lastEvent.eliminated]} is uitgeschakeld!
+            {playerNames[lastEvent.checkmated]} is schaakmat!
           </Text>
         </View>
       )}
