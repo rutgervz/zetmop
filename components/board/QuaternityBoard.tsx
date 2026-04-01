@@ -2,27 +2,25 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useQuaternityStore, type QuaterColor } from '@/stores/quaternityStore';
 
-// Unicode chess symbols
-const OPEN_SYMBOLS: Record<string, string> = {
-  k: '\u2654', q: '\u2655', r: '\u2656', b: '\u2657', n: '\u2658', p: '\u2659',
-};
-const FILLED_SYMBOLS: Record<string, string> = {
+// Altijd filled symbolen (zoals quaternity.com)
+const SYMBOLS: Record<string, string> = {
   k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F',
 };
 
-// Quaternity.com kleuren
+// Quaternity.com stijl: filled stukken in spelerskleur met contrasterende outline
 const PLAYER_COLORS: Record<QuaterColor, string> = {
-  w: '#E8E0D0',     // zilver/lichtgrijs
-  b: '#1A1A1A',     // zwart
-  r: '#CC2222',     // donkerrood
-  g: '#1B6B1B',     // donkergroen
+  w: '#B0A898',     // grijs (zoals quaternity.com)
+  b: '#2A2A2A',     // zwart
+  r: '#8B2020',     // donkerrood
+  g: '#2D6B2D',     // donkergroen
 };
 
-const PLAYER_SHADOW: Record<QuaterColor, string> = {
-  w: 'rgba(0,0,0,0.5)',
-  b: 'rgba(255,255,255,0.15)',
-  r: 'rgba(0,0,0,0.5)',
-  g: 'rgba(0,0,0,0.5)',
+// Outline/rand kleur per speler
+const PLAYER_OUTLINE: Record<QuaterColor, string> = {
+  w: '#D8D0C4',     // lichtere rand
+  b: '#666666',     // grijze rand
+  r: '#CC5555',     // lichtere rode rand
+  g: '#55AA55',     // lichtere groene rand
 };
 
 // Board kleuren: warm hout thema (quaternity.com stijl)
@@ -118,40 +116,37 @@ export default function QuaternityBoard() {
                     {/* Piece */}
                     {piece && (
                       <View style={styles.pieceContainer}>
-                        {/* Shadow */}
-                        <Text
-                          style={[styles.pieceShadow, {
-                            fontSize: squareSize * 0.78,
-                            lineHeight: squareSize,
-                          }]}
-                          allowFontScaling={false}
-                        >
-                          {piece.color === 'b' ? FILLED_SYMBOLS[piece.type] : OPEN_SYMBOLS[piece.type]}
-                        </Text>
-                        {/* Main */}
-                        <Text
-                          style={[styles.pieceText, {
-                            fontSize: squareSize * 0.78,
-                            lineHeight: squareSize,
-                            color: PLAYER_COLORS[piece.color],
-                            textShadowColor: PLAYER_SHADOW[piece.color],
-                            textShadowOffset: { width: 0, height: 1 },
-                            textShadowRadius: 3,
-                          }]}
-                          allowFontScaling={false}
-                        >
-                          {piece.color === 'b' ? FILLED_SYMBOLS[piece.type] : OPEN_SYMBOLS[piece.type]}
-                        </Text>
-
-                        {/* ACP richting-indicator (< > pijltjes) */}
+                        {/* ACP pijl-indicator boven de pion (^ zoals quaternity.com) */}
                         {piece.isAdvancedCentral && piece.type === 'p' && (
-                          <Text style={[styles.acpIndicator, {
-                            fontSize: squareSize * 0.22,
-                            color: PLAYER_COLORS[piece.color],
+                          <Text style={[styles.acpArrow, {
+                            fontSize: squareSize * 0.25,
+                            color: PLAYER_OUTLINE[piece.color],
                           }]}>
-                            {'<>'}
+                            {'^'}
                           </Text>
                         )}
+                        {/* Outline laag (lichtere kleur, iets groter, als rand-effect) */}
+                        <Text
+                          style={[styles.pieceOutline, {
+                            fontSize: squareSize * 0.78,
+                            lineHeight: squareSize * 0.85,
+                            color: PLAYER_OUTLINE[piece.color],
+                          }]}
+                          allowFontScaling={false}
+                        >
+                          {SYMBOLS[piece.type]}
+                        </Text>
+                        {/* Hoofdkleur */}
+                        <Text
+                          style={[styles.pieceText, {
+                            fontSize: squareSize * 0.72,
+                            lineHeight: squareSize * 0.85,
+                            color: PLAYER_COLORS[piece.color],
+                          }]}
+                          allowFontScaling={false}
+                        >
+                          {SYMBOLS[piece.type]}
+                        </Text>
                       </View>
                     )}
 
@@ -241,20 +236,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pieceShadow: {
+  pieceOutline: {
     position: 'absolute',
     textAlign: 'center',
-    color: 'rgba(0,0,0,0.25)',
-    transform: [{ translateX: 1 }, { translateY: 1 }],
   },
   pieceText: {
     textAlign: 'center',
   },
-  acpIndicator: {
+  acpArrow: {
     position: 'absolute',
-    bottom: -2,
+    top: -2,
     fontWeight: '700',
-    opacity: 0.7,
   },
   legalDot: {
     backgroundColor: SQ.legalMove,
