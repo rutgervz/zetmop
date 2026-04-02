@@ -1,46 +1,96 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { useQuaternityStore, type QuaterColor } from '@/stores/quaternityStore';
 
-// Altijd filled symbolen (zoals quaternity.com)
+// Filled unicode symbolen
 const SYMBOLS: Record<string, string> = {
   k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F',
 };
 
-// Quaternity.com stijl: filled stukken in spelerskleur met contrasterende outline
-const PLAYER_COLORS: Record<QuaterColor, string> = {
-  w: '#B0A898',     // grijs (zoals quaternity.com)
-  b: '#2A2A2A',     // zwart
-  r: '#8B2020',     // donkerrood
-  g: '#2D6B2D',     // donkergroen
+// Quaternity.com stijl kleuren
+const PLAYER_FILL: Record<QuaterColor, string> = {
+  w: '#A89E8E',     // warm grijs
+  b: '#1C1C1C',     // zwart
+  r: '#962020',     // donkerrood
+  g: '#266B26',     // donkergroen
 };
 
-// Outline/rand kleur per speler
-const PLAYER_OUTLINE: Record<QuaterColor, string> = {
-  w: '#D8D0C4',     // lichtere rand
-  b: '#666666',     // grijze rand
-  r: '#CC5555',     // lichtere rode rand
-  g: '#55AA55',     // lichtere groene rand
+const PLAYER_STROKE: Record<QuaterColor, string> = {
+  w: '#E0D8CC',     // crème outline
+  b: '#5A5A5A',     // grijs outline
+  r: '#D45050',     // lichtrood outline
+  g: '#50B050',     // lichtgroen outline
 };
 
-// Board kleuren: warm hout thema (quaternity.com stijl)
+// Board: warm hout met meer contrast (quaternity.com)
 const SQ = {
-  light: '#C8A96E',      // warm beige/tan
-  dark: '#6B4226',       // donker hout bruin
-  selected: 'rgba(255, 210, 70, 0.55)',
-  legalMove: 'rgba(255, 210, 70, 0.4)',
-  lastMove: 'rgba(200, 180, 80, 0.35)',
-  coordText: '#9A8A6A',
-  border: '#3D2B1F',
+  light: '#C4A56C',
+  dark: '#5C3A1E',
+  selected: 'rgba(255, 200, 50, 0.5)',
+  legalMove: 'rgba(0, 0, 0, 0.22)',
+  lastMove: 'rgba(200, 180, 60, 0.4)',
+  coordText: 'rgba(255,255,255,0.55)',
+  border: '#2A1A0E',
 };
 
-// Richting-pijltjes voor Advanced Central Pawns
-const DIR_ARROWS: Record<string, string> = {
-  up: '↑',
-  down: '↓',
-  left: '←',
-  right: '→',
-};
+const COL_LABELS = 'ABCDEFGHIJKL';
+
+/** Chess piece met CSS text-stroke voor mooie outline (web) */
+function ChessPiece({ type, color, size, isACP }: {
+  type: string;
+  color: QuaterColor;
+  size: number;
+  isACP?: boolean;
+}) {
+  const fontSize = size * 0.88;
+  const strokeWidth = Math.max(1, size * 0.025);
+  const symbol = SYMBOLS[type];
+  const fill = PLAYER_FILL[color];
+  const stroke = PLAYER_STROKE[color];
+
+  // Web: gebruik CSS text-stroke voor echte outline
+  const webStyle = Platform.OS === 'web' ? {
+    WebkitTextStroke: `${strokeWidth}px ${stroke}`,
+    paintOrder: 'stroke fill' as const,
+    filter: `drop-shadow(1px 2px 2px rgba(0,0,0,0.4))`,
+  } : {};
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', width: size, height: size }}>
+      {/* ACP chevron boven de pion */}
+      {isACP && (
+        <Text
+          style={{
+            position: 'absolute',
+            top: size * 0.02,
+            fontSize: size * 0.2,
+            color: stroke,
+            fontWeight: '800',
+            zIndex: 1,
+            ...(Platform.OS === 'web' ? {
+              filter: `drop-shadow(0 1px 1px rgba(0,0,0,0.5))`,
+            } as any : {}),
+          }}
+          allowFontScaling={false}
+        >
+          {'◇'}
+        </Text>
+      )}
+      <Text
+        style={{
+          fontSize,
+          lineHeight: size,
+          color: fill,
+          textAlign: 'center',
+          ...webStyle,
+        } as any}
+        allowFontScaling={false}
+      >
+        {symbol}
+      </Text>
+    </View>
+  );
+}
 
 export default function QuaternityBoard() {
   const { width: ww, height: wh } = useWindowDimensions();
@@ -48,19 +98,14 @@ export default function QuaternityBoard() {
   const selectedSquare = useQuaternityStore((s) => s.selectedSquare);
   const legalMoves = useQuaternityStore((s) => s.legalMoves);
   const lastMove = useQuaternityStore((s) => s.lastMove);
-  const turn = useQuaternityStore((s) => s.turn);
   const selectSquare = useQuaternityStore((s) => s.selectSquare);
 
-  // Coördinaten nemen ruimte in: 18px links + 18px rechts
-  const coordSize = 16;
+  const coordSize = 18;
   const availableSize = Math.min(ww - 4, wh - 56) - coordSize * 2;
   const squareSize = Math.floor(availableSize / 12);
   const boardSize = squareSize * 12;
 
-  // Legal moves lookup
   const legalSet = new Set(legalMoves.map((m) => `${m.col},${m.row}`));
-
-  const COL_LABELS = 'ABCDEFGHIJKL';
 
   return (
     <View style={styles.wrapper}>
@@ -69,19 +114,18 @@ export default function QuaternityBoard() {
         <View style={{ width: coordSize }} />
         {COL_LABELS.split('').map((letter) => (
           <View key={letter} style={[styles.coordCell, { width: squareSize }]}>
-            <Text style={[styles.coordText, { fontSize: coordSize * 0.7 }]}>{letter}</Text>
+            <Text style={[styles.coordText, { fontSize: 11 }]}>{letter}</Text>
           </View>
         ))}
         <View style={{ width: coordSize }} />
       </View>
 
-      {/* Board met rij-labels */}
       <View style={styles.boardRow}>
         {/* Rij-labels links */}
         <View style={styles.rowLabels}>
           {[12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((num) => (
             <View key={num} style={[styles.coordCell, { height: squareSize, width: coordSize }]}>
-              <Text style={[styles.coordText, { fontSize: coordSize * 0.7 }]}>{num}</Text>
+              <Text style={[styles.coordText, { fontSize: 11 }]}>{num}</Text>
             </View>
           ))}
         </View>
@@ -108,62 +152,32 @@ export default function QuaternityBoard() {
                     onPress={() => selectSquare(col, row)}
                     style={[styles.square, { width: squareSize, height: squareSize, backgroundColor: bgColor }]}
                   >
-                    {/* Last move */}
                     {isLastMove && <View style={[styles.overlay, { backgroundColor: SQ.lastMove }]} />}
-                    {/* Selected */}
                     {isSelected && <View style={[styles.overlay, { backgroundColor: SQ.selected }]} />}
 
-                    {/* Piece */}
                     {piece && (
-                      <View style={styles.pieceContainer}>
-                        {/* ACP pijl-indicator boven de pion (^ zoals quaternity.com) */}
-                        {piece.isAdvancedCentral && piece.type === 'p' && (
-                          <Text style={[styles.acpArrow, {
-                            fontSize: squareSize * 0.25,
-                            color: PLAYER_OUTLINE[piece.color],
-                          }]}>
-                            {'^'}
-                          </Text>
-                        )}
-                        {/* Outline laag (lichtere kleur, iets groter, als rand-effect) */}
-                        <Text
-                          style={[styles.pieceOutline, {
-                            fontSize: squareSize * 0.78,
-                            lineHeight: squareSize * 0.85,
-                            color: PLAYER_OUTLINE[piece.color],
-                          }]}
-                          allowFontScaling={false}
-                        >
-                          {SYMBOLS[piece.type]}
-                        </Text>
-                        {/* Hoofdkleur */}
-                        <Text
-                          style={[styles.pieceText, {
-                            fontSize: squareSize * 0.72,
-                            lineHeight: squareSize * 0.85,
-                            color: PLAYER_COLORS[piece.color],
-                          }]}
-                          allowFontScaling={false}
-                        >
-                          {SYMBOLS[piece.type]}
-                        </Text>
-                      </View>
+                      <ChessPiece
+                        type={piece.type}
+                        color={piece.color}
+                        size={squareSize}
+                        isACP={piece.isAdvancedCentral && piece.type === 'p'}
+                      />
                     )}
 
-                    {/* Legal move: dot (empty) or ring (capture) */}
+                    {/* Legal move indicator */}
                     {isLegal && !piece && (
                       <View style={[styles.legalDot, {
-                        width: squareSize * 0.28,
-                        height: squareSize * 0.28,
-                        borderRadius: squareSize * 0.14,
+                        width: squareSize * 0.32,
+                        height: squareSize * 0.32,
+                        borderRadius: squareSize * 0.16,
                       }]} />
                     )}
                     {isLegal && piece && (
                       <View style={[styles.legalCapture, {
-                        width: squareSize - 2,
-                        height: squareSize - 2,
-                        borderRadius: squareSize * 0.08,
-                        borderWidth: squareSize * 0.06,
+                        width: squareSize * 0.92,
+                        height: squareSize * 0.92,
+                        borderRadius: squareSize * 0.46,
+                        borderWidth: squareSize * 0.07,
                       }]} />
                     )}
                   </Pressable>
@@ -177,7 +191,7 @@ export default function QuaternityBoard() {
         <View style={styles.rowLabels}>
           {[12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((num) => (
             <View key={num} style={[styles.coordCell, { height: squareSize, width: coordSize }]}>
-              <Text style={[styles.coordText, { fontSize: coordSize * 0.7 }]}>{num}</Text>
+              <Text style={[styles.coordText, { fontSize: 11 }]}>{num}</Text>
             </View>
           ))}
         </View>
@@ -188,7 +202,7 @@ export default function QuaternityBoard() {
         <View style={{ width: coordSize }} />
         {COL_LABELS.split('').map((letter) => (
           <View key={letter} style={[styles.coordCell, { width: squareSize }]}>
-            <Text style={[styles.coordText, { fontSize: coordSize * 0.7 }]}>{letter}</Text>
+            <Text style={[styles.coordText, { fontSize: 11 }]}>{letter}</Text>
           </View>
         ))}
         <View style={{ width: coordSize }} />
@@ -199,25 +213,11 @@ export default function QuaternityBoard() {
 
 const styles = StyleSheet.create({
   wrapper: { alignItems: 'center', paddingVertical: 2 },
-  coordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  coordCell: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coordText: {
-    color: SQ.coordText,
-    fontWeight: '600',
-  },
-  boardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowLabels: {
-    flexDirection: 'column',
-  },
+  coordRow: { flexDirection: 'row', alignItems: 'center' },
+  coordCell: { alignItems: 'center', justifyContent: 'center' },
+  coordText: { color: SQ.coordText, fontWeight: '700', letterSpacing: 0.5 },
+  boardRow: { flexDirection: 'row', alignItems: 'center' },
+  rowLabels: { flexDirection: 'column' },
   board: {
     borderWidth: 2,
     borderColor: SQ.border,
@@ -231,29 +231,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   overlay: { ...StyleSheet.absoluteFillObject },
-  pieceContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pieceOutline: {
-    position: 'absolute',
-    textAlign: 'center',
-  },
-  pieceText: {
-    textAlign: 'center',
-  },
-  acpArrow: {
-    position: 'absolute',
-    top: -2,
-    fontWeight: '700',
-  },
   legalDot: {
     backgroundColor: SQ.legalMove,
     position: 'absolute',
   },
   legalCapture: {
-    borderColor: 'rgba(255, 210, 70, 0.55)',
+    borderColor: 'rgba(0, 0, 0, 0.25)',
     position: 'absolute',
     backgroundColor: 'transparent',
   },
