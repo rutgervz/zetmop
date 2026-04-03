@@ -2,24 +2,28 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { useQuaternityStore, type QuaterColor } from '@/stores/quaternityStore';
 
-// Filled unicode symbolen
-const SYMBOLS: Record<string, string> = {
+// Open symbolen (klassiek silhouet met meer detail)
+const OPEN_SYMBOLS: Record<string, string> = {
+  k: '\u2654', q: '\u2655', r: '\u2656', b: '\u2657', n: '\u2658', p: '\u2659',
+};
+// Filled symbolen
+const FILLED_SYMBOLS: Record<string, string> = {
   k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F',
 };
 
-// Quaternity.com kleuren: sprekend, hoog contrast
+// Wit = zwarte rand, rest = witte rand (zoals quaternity.com)
 const PLAYER_FILL: Record<QuaterColor, string> = {
-  w: '#D4C8B4',     // warm crème/beige
-  b: '#111111',     // diep zwart
-  r: '#BB2020',     // helder rood
-  g: '#1E7B1E',     // fris donkergroen
+  w: '#EFEFEF',     // helder wit
+  b: '#1A1A1A',     // zwart
+  r: '#CC2222',     // helder rood
+  g: '#228B22',     // fris groen
 };
 
 const PLAYER_STROKE: Record<QuaterColor, string> = {
-  w: '#3A3020',     // donkere outline op lichte stukken
-  b: '#888888',     // grijze outline op zwart
-  r: '#4A0A0A',     // donkerrood outline
-  g: '#0A3A0A',     // donkergroen outline
+  w: '#111111',     // zwarte rand om wit
+  b: '#EEEEEE',     // witte rand om zwart
+  r: '#EEEEEE',     // witte rand om rood
+  g: '#EEEEEE',     // witte rand om groen
 };
 
 // Board: donker hout, hoog contrast (quaternity.com)
@@ -44,7 +48,8 @@ function ChessPiece({ type, color, size, isACP }: {
 }) {
   const fontSize = size * 0.92;
   const strokeWidth = Math.max(1.5, size * 0.04);
-  const symbol = SYMBOLS[type];
+  // Filled symbolen voor iedereen — CSS color + stroke doen het werk
+  const symbol = FILLED_SYMBOLS[type];
   const fill = PLAYER_FILL[color];
   const stroke = PLAYER_STROKE[color];
 
