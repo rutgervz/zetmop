@@ -7,30 +7,30 @@ const SYMBOLS: Record<string, string> = {
   k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F',
 };
 
-// Quaternity.com stijl kleuren
+// Quaternity.com kleuren: sprekend, hoog contrast
 const PLAYER_FILL: Record<QuaterColor, string> = {
-  w: '#A89E8E',     // warm grijs
-  b: '#1C1C1C',     // zwart
-  r: '#962020',     // donkerrood
-  g: '#266B26',     // donkergroen
+  w: '#D4C8B4',     // warm crème/beige
+  b: '#111111',     // diep zwart
+  r: '#BB2020',     // helder rood
+  g: '#1E7B1E',     // fris donkergroen
 };
 
 const PLAYER_STROKE: Record<QuaterColor, string> = {
-  w: '#E0D8CC',     // crème outline
-  b: '#5A5A5A',     // grijs outline
-  r: '#D45050',     // lichtrood outline
-  g: '#50B050',     // lichtgroen outline
+  w: '#3A3020',     // donkere outline op lichte stukken
+  b: '#888888',     // grijze outline op zwart
+  r: '#4A0A0A',     // donkerrood outline
+  g: '#0A3A0A',     // donkergroen outline
 };
 
-// Board: warm hout met meer contrast (quaternity.com)
+// Board: donker hout, hoog contrast (quaternity.com)
 const SQ = {
-  light: '#C4A56C',
-  dark: '#5C3A1E',
+  light: '#C8A878',     // warm zand
+  dark: '#6B3E22',      // donker hout
   selected: 'rgba(255, 200, 50, 0.5)',
   legalMove: 'rgba(0, 0, 0, 0.22)',
-  lastMove: 'rgba(200, 180, 60, 0.4)',
-  coordText: 'rgba(255,255,255,0.55)',
-  border: '#2A1A0E',
+  lastMove: 'rgba(220, 190, 50, 0.4)',
+  coordText: '#B8A888',
+  border: '#2A1808',
 };
 
 const COL_LABELS = 'ABCDEFGHIJKL';
@@ -42,8 +42,8 @@ function ChessPiece({ type, color, size, isACP }: {
   size: number;
   isACP?: boolean;
 }) {
-  const fontSize = size * 0.88;
-  const strokeWidth = Math.max(1, size * 0.025);
+  const fontSize = size * 0.92;
+  const strokeWidth = Math.max(1.5, size * 0.04);
   const symbol = SYMBOLS[type];
   const fill = PLAYER_FILL[color];
   const stroke = PLAYER_STROKE[color];
