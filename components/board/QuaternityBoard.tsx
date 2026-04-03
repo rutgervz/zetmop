@@ -126,6 +126,7 @@ export default function QuaternityBoard() {
   const legalMoves = useQuaternityStore((s) => s.legalMoves);
   const lastMove = useQuaternityStore((s) => s.lastMove);
   const selectSquare = useQuaternityStore((s) => s.selectSquare);
+  const aiThinking = useQuaternityStore((s) => s.aiThinking);
 
   const coordSize = 18;
   const availableSize = Math.min(ww - 4, wh - 56) - coordSize * 2;
@@ -176,7 +177,7 @@ export default function QuaternityBoard() {
                 return (
                   <Pressable
                     key={col}
-                    onPress={() => selectSquare(col, row)}
+                    onPress={() => !aiThinking && selectSquare(col, row)}
                     style={[styles.square, { width: squareSize, height: squareSize, backgroundColor: bgColor }]}
                   >
                     {isLastMove && <View style={[styles.overlay, { backgroundColor: SQ.lastMove }]} />}

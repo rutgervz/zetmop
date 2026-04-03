@@ -36,6 +36,8 @@ type QuaternityState = {
   playerNames: Record<QuaterColor, string>;
   moveHistory: string[];
   pendingPromotion: { col: number; row: number } | null;
+  aiPlayers: Set<QuaterColor>;
+  aiThinking: boolean;
 
   newGame: () => void;
   selectSquare: (col: number, row: number) => void;
@@ -44,6 +46,7 @@ type QuaternityState = {
   resign: (color: QuaterColor) => void;
   undoMove: () => void;
   setPlayerNames: (names: Record<QuaterColor, string>) => void;
+  setAiPlayers: (ai: QuaterColor[]) => void;
 };
 
 const BOARD_SIZE = 12;
@@ -490,6 +493,68 @@ function resolveACPDirection(
   return piece;
 }
 
+// === AI ENGINE ===
+
+const PIECE_VALUES: Record<string, number> = {
+  p: 1, n: 3, b: 3, r: 5, q: 9, k: 100,
+};
+
+/**
+ * Eenvoudige heuristische AI voor Quaternity.
+ * Evalueert alle mogelijke zetten en kiest de beste op basis van:
+ * - Stukwaarde van captures
+ * - Centrumcontrole
+ * - Vermijd eigen stukken te verliezen
+ */
+function pickAiMove(
+  board: (QuaterPiece | null)[][],
+  player: QuaterColor,
+  controlled: QuaterColor[],
+  activePlayers: QuaterColor[],
+): { fromCol: number; fromRow: number; toCol: number; toRow: number } | null {
+  const allMoves: { fc: number; fr: number; tc: number; tr: number; score: number }[] = [];
+
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const piece = board[r][c];
+      if (!piece || !controlled.includes(piece.owner)) continue;
+      const moves = generateMoves(board, c, r, controlled);
+      for (const m of moves) {
+        let score = 0;
+        const target = board[m.row]?.[m.col];
+
+        // Capture waarde
+        if (target) {
+          score += PIECE_VALUES[target.type] * 10;
+          // Koning slaan = hoogste prioriteit
+          if (target.type === 'k') score += 500;
+        }
+
+        // Centrum bonus (velden 4-7 zijn het centrum)
+        const centerDist = Math.abs(m.col - 5.5) + Math.abs(m.row - 5.5);
+        score += Math.max(0, 6 - centerDist) * 0.3;
+
+        // Vermijd koning te bewegen tenzij nodig
+        if (piece.type === 'k') score -= 2;
+
+        // Voorwaartse beweging is goed voor pionnen
+        if (piece.type === 'p') score += 0.5;
+
+        // Beetje willekeur zodat het niet te voorspelbaar is
+        score += Math.random() * 2;
+
+        allMoves.push({ fc: c, fr: r, tc: m.col, tr: m.row, score });
+      }
+    }
+  }
+
+  if (allMoves.length === 0) return null;
+
+  // Sorteer op score, pak de beste
+  allMoves.sort((a, b) => b.score - a.score);
+  return { fromCol: allMoves[0].fc, fromRow: allMoves[0].fr, toCol: allMoves[0].tc, toRow: allMoves[0].tr };
+}
+
 export const useQuaternityStore = create<QuaternityState>((set, get) => ({
   board: createInitialBoard(),
   turn: 'w',
@@ -504,8 +569,11 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
   playerNames: { w: 'Wit', r: 'Rood', b: 'Zwart', g: 'Groen' },
   moveHistory: [],
   pendingPromotion: null,
+  aiPlayers: new Set<QuaterColor>(),
+  aiThinking: false,
 
   newGame: () => {
+    const { aiPlayers } = get();
     set({
       board: createInitialBoard(),
       turn: 'w',
@@ -519,7 +587,10 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
       winner: null,
       moveHistory: [],
       pendingPromotion: null,
+      aiThinking: false,
     });
+    // Trigger AI als eerste speler een computer is
+    setTimeout(() => triggerAiIfNeeded(), 300);
   },
 
   selectSquare: (col: number, row: number) => {
@@ -648,6 +719,11 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
         winner: newWinner,
         moveHistory: [...get().moveHistory, moveStr],
       });
+
+      // Trigger AI voor volgende speler als die computer is
+      if (newStatus !== 'finished') {
+        setTimeout(() => triggerAiIfNeeded(), 400);
+      }
       return;
     }
 
@@ -726,4 +802,77 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
   undoMove: () => {},
 
   setPlayerNames: (names) => set({ playerNames: names }),
+
+  setAiPlayers: (ai: QuaterColor[]) => set({ aiPlayers: new Set(ai) }),
 }));
+
+/**
+ * Als de huidige speler een AI is, voer automatisch een zet uit.
+ * Herhaalt zichzelf als de volgende speler ook AI is.
+ */
+function triggerAiIfNeeded(): void {
+  const state = useQuaternityStore.getState();
+  const { board, turn, activePlayers, playerStatus, aiPlayers, status, aiThinking } = state;
+
+  if (status === 'finished' || aiThinking) return;
+  if (!aiPlayers.has(turn)) return;
+  if (playerStatus[turn] !== 'active') return;
+
+  useQuaternityStore.setState({ aiThinking: true });
+
+  setTimeout(() => {
+    const current = useQuaternityStore.getState();
+    if (current.status === 'finished' || !current.aiPlayers.has(current.turn)) {
+      useQuaternityStore.setState({ aiThinking: false });
+      return;
+    }
+
+    // Bepaal gecontroleerde kleuren
+    const defeatedBy: Record<QuaterColor, QuaterColor | null> = { w: null, r: null, b: null, g: null };
+    for (const color of TURN_ORDER) {
+      if (current.playerStatus[color] === 'defeated') {
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          for (let c = 0; c < BOARD_SIZE; c++) {
+            const piece = current.board[r][c];
+            if (piece && piece.color === color && piece.owner !== color) {
+              defeatedBy[color] = piece.owner;
+              break;
+            }
+          }
+          if (defeatedBy[color]) break;
+        }
+      }
+    }
+    const controlled = getControlledColors(current.board, current.turn, current.activePlayers, defeatedBy);
+
+    const move = pickAiMove(current.board, current.turn, controlled, current.activePlayers);
+    useQuaternityStore.setState({ aiThinking: false });
+
+    if (!move) {
+      // Geen zetten: pass
+      current.pass();
+      return;
+    }
+
+    // Simuleer de zet via selectSquare (hergebruik bestaande logica)
+    // Eerst selecteren, dan doelveld
+    useQuaternityStore.getState().selectSquare(move.fromCol, move.fromRow);
+    // Kleine delay voor visueel effect
+    setTimeout(() => {
+      const s = useQuaternityStore.getState();
+      // Auto-promotie naar dame voor AI
+      if (s.pendingPromotion) {
+        s.promote('q');
+      } else {
+        s.selectSquare(move.toCol, move.toRow);
+        // Check of er een promotie pending is na de zet
+        setTimeout(() => {
+          const s2 = useQuaternityStore.getState();
+          if (s2.pendingPromotion) {
+            s2.promote('q');
+          }
+        }, 50);
+      }
+    }, 100);
+  }, 300 + Math.random() * 400); // Variabele denktijd
+}

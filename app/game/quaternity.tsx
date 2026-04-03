@@ -6,16 +6,17 @@ import QuaternityBoard from '@/components/board/QuaternityBoard';
 import { useQuaternityStore, type QuaterColor } from '@/stores/quaternityStore';
 import { AppColors } from '@/constants/Colors';
 
-const PLAYER_INFO: { color: QuaterColor; label: string; bg: string; dot: string }[] = [
-  { color: 'w', label: 'Zuid', bg: '#FFFFFF', dot: '#FFFFFF' },
-  { color: 'r', label: 'West', bg: '#E84040', dot: '#E84040' },
-  { color: 'b', label: 'Noord', bg: '#1A1A1A', dot: '#1A1A1A' },
-  { color: 'g', label: 'Oost', bg: '#2AAA6A', dot: '#2AAA6A' },
+const PLAYER_INFO: { color: QuaterColor; label: string; dot: string }[] = [
+  { color: 'w', label: 'Zuid', dot: '#FFFFFF' },
+  { color: 'r', label: 'West', dot: '#E84040' },
+  { color: 'b', label: 'Noord', dot: '#1A1A1A' },
+  { color: 'g', label: 'Oost', dot: '#2AAA6A' },
 ];
 
 export default function QuaternityScreen() {
   const [phase, setPhase] = useState<'setup' | 'playing'>('setup');
   const [names, setNames] = useState({ w: '', r: '', b: '', g: '' });
+  const [aiFlags, setAiFlags] = useState({ w: false, r: true, b: true, g: true });
 
   const turn = useQuaternityStore((s) => s.turn);
   const status = useQuaternityStore((s) => s.status);
@@ -23,19 +24,32 @@ export default function QuaternityScreen() {
   const playerNames = useQuaternityStore((s) => s.playerNames);
   const winner = useQuaternityStore((s) => s.winner);
   const lastEvent = useQuaternityStore((s) => s.lastEvent);
+  const aiThinking = useQuaternityStore((s) => s.aiThinking);
   const newGame = useQuaternityStore((s) => s.newGame);
   const setPlayerNames = useQuaternityStore((s) => s.setPlayerNames);
+  const setAiPlayers = useQuaternityStore((s) => s.setAiPlayers);
   const moveHistory = useQuaternityStore((s) => s.moveHistory);
 
   const recentMoves = moveHistory.slice(-4);
 
+  const toggleAi = (color: QuaterColor) => {
+    setAiFlags({ ...aiFlags, [color]: !aiFlags[color] });
+  };
+
   const startGame = () => {
-    setPlayerNames({
-      w: names.w.trim() || 'Wit',
-      r: names.r.trim() || 'Rood',
-      b: names.b.trim() || 'Zwart',
-      g: names.g.trim() || 'Groen',
-    });
+    const finalNames: Record<QuaterColor, string> = {
+      w: aiFlags.w ? 'Computer' : (names.w.trim() || 'Wit'),
+      r: aiFlags.r ? 'Computer' : (names.r.trim() || 'Rood'),
+      b: aiFlags.b ? 'Computer' : (names.b.trim() || 'Zwart'),
+      g: aiFlags.g ? 'Computer' : (names.g.trim() || 'Groen'),
+    };
+    setPlayerNames(finalNames);
+
+    const aiList = (Object.entries(aiFlags) as [QuaterColor, boolean][])
+      .filter(([, isAi]) => isAi)
+      .map(([color]) => color);
+    setAiPlayers(aiList);
+
     newGame();
     setPhase('playing');
   };
@@ -57,15 +71,34 @@ export default function QuaternityScreen() {
             {PLAYER_INFO.map((p) => (
               <View key={p.color} style={styles.nameRow}>
                 <View style={[styles.colorDot, { backgroundColor: p.dot, borderColor: p.color === 'b' ? '#555' : '#ccc' }]} />
-                <TextInput
-                  style={styles.nameInput}
-                  placeholder={`${p.label} speler`}
-                  placeholderTextColor="#555"
-                  value={names[p.color]}
-                  onChangeText={(t) => setNames({ ...names, [p.color]: t })}
-                  returnKeyType={p.color === 'g' ? 'go' : 'next'}
-                  onSubmitEditing={p.color === 'g' ? startGame : undefined}
-                />
+
+                {aiFlags[p.color] ? (
+                  <View style={styles.aiLabel}>
+                    <FontAwesome name="desktop" size={15} color={AppColors.accent} />
+                    <Text style={styles.aiText}>Computer</Text>
+                  </View>
+                ) : (
+                  <TextInput
+                    style={styles.nameInput}
+                    placeholder={`${p.label} speler`}
+                    placeholderTextColor="#555"
+                    value={names[p.color]}
+                    onChangeText={(t) => setNames({ ...names, [p.color]: t })}
+                    returnKeyType="next"
+                  />
+                )}
+
+                <Pressable
+                  onPress={() => toggleAi(p.color)}
+                  style={[styles.aiToggle, aiFlags[p.color] && styles.aiToggleActive]}
+                  hitSlop={8}
+                >
+                  <FontAwesome
+                    name={aiFlags[p.color] ? 'desktop' : 'user'}
+                    size={14}
+                    color={aiFlags[p.color] ? AppColors.accent : '#666'}
+                  />
+                </Pressable>
               </View>
             ))}
           </View>
@@ -109,7 +142,9 @@ export default function QuaternityScreen() {
           <Text style={styles.turnText}>
             {isFinished
               ? `${playerNames[winner!]} wint!`
-              : `${turnName} is aan zet`
+              : aiThinking
+                ? `${turnName} denkt na...`
+                : `${turnName} is aan zet`
             }
           </Text>
         </View>
@@ -161,11 +196,25 @@ const styles = StyleSheet.create({
   setupSubtitle: { fontSize: 16, color: AppColors.textMuted, textAlign: 'center', marginTop: 8, marginBottom: 32 },
   nameFields: { gap: 12 },
   nameRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: AppColors.surface, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: AppColors.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
   },
   colorDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2 },
   nameInput: { flex: 1, color: AppColors.text, fontSize: 17, fontWeight: '500', padding: 0 },
+  aiLabel: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
+  },
+  aiText: {
+    color: AppColors.accent, fontSize: 16, fontWeight: '600',
+  },
+  aiToggle: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  aiToggleActive: {
+    backgroundColor: 'rgba(78, 205, 196, 0.15)',
+  },
   startBtn: {
     backgroundColor: AppColors.secondary, paddingVertical: 16, borderRadius: 16,
     alignItems: 'center', marginTop: 32,
