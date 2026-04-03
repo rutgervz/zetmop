@@ -39,7 +39,11 @@ const SQ = {
 
 const COL_LABELS = 'ABCDEFGHIJKL';
 
-/** Chess piece met CSS text-stroke voor mooie outline (web) */
+/**
+ * Chess piece met twee lagen:
+ * 1. Filled symbool (♞) — solid body in spelerskleur met outline stroke
+ * 2. Open symbool (♘) eroverheen — toont klassieke details (oog paard, kruis loper, etc.)
+ */
 function ChessPiece({ type, color, size, isACP }: {
   type: string;
   color: QuaterColor;
@@ -48,13 +52,12 @@ function ChessPiece({ type, color, size, isACP }: {
 }) {
   const fontSize = size * 0.92;
   const strokeWidth = Math.max(1.5, size * 0.04);
-  // Filled symbolen voor iedereen — CSS color + stroke doen het werk
-  const symbol = FILLED_SYMBOLS[type];
   const fill = PLAYER_FILL[color];
   const stroke = PLAYER_STROKE[color];
+  // Detail kleur: contrasterende kleur voor de interne lijnen
+  const detailColor = color === 'w' ? '#333333' : '#FFFFFF';
 
-  // Web: gebruik CSS text-stroke voor echte outline
-  const webStyle = Platform.OS === 'web' ? {
+  const baseStyle = Platform.OS === 'web' ? {
     WebkitTextStroke: `${strokeWidth}px ${stroke}`,
     paintOrder: 'stroke fill' as const,
     filter: `drop-shadow(1px 2px 2px rgba(0,0,0,0.4))`,
@@ -62,7 +65,7 @@ function ChessPiece({ type, color, size, isACP }: {
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', width: size, height: size }}>
-      {/* ACP chevron boven de pion */}
+      {/* ACP chevron */}
       {isACP && (
         <Text
           style={{
@@ -71,7 +74,7 @@ function ChessPiece({ type, color, size, isACP }: {
             fontSize: size * 0.2,
             color: stroke,
             fontWeight: '800',
-            zIndex: 1,
+            zIndex: 2,
             ...(Platform.OS === 'web' ? {
               filter: `drop-shadow(0 1px 1px rgba(0,0,0,0.5))`,
             } as any : {}),
@@ -81,17 +84,36 @@ function ChessPiece({ type, color, size, isACP }: {
           {'◇'}
         </Text>
       )}
+      {/* Laag 1: filled symbool — solid body met outline */}
       <Text
         style={{
+          position: 'absolute',
           fontSize,
           lineHeight: size,
           color: fill,
           textAlign: 'center',
-          ...webStyle,
+          ...baseStyle,
         } as any}
         allowFontScaling={false}
       >
-        {symbol}
+        {FILLED_SYMBOLS[type]}
+      </Text>
+      {/* Laag 2: open symbool — klassieke details (oog, kruis, etc.) */}
+      <Text
+        style={{
+          fontSize,
+          lineHeight: size,
+          color: detailColor,
+          textAlign: 'center',
+          opacity: 0.35,
+          ...(Platform.OS === 'web' ? {
+            WebkitTextStroke: '0px transparent',
+            filter: 'none',
+          } as any : {}),
+        } as any}
+        allowFontScaling={false}
+      >
+        {OPEN_SYMBOLS[type]}
       </Text>
     </View>
   );
