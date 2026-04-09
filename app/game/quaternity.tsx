@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, SafeAreaView, useWindowDimensions } from 'react-native';
 import { router, Stack } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import QuaternityBoard from '@/components/board/QuaternityBoard';
+import GameLog from '@/components/board/GameLog';
 import { useQuaternityStore, type QuaterColor } from '@/stores/quaternityStore';
+import { useQuaternityMoveLog } from '@/hooks/useQuaternityMoveLog';
+import { useGameTimer } from '@/hooks/useGameTimer';
 import { AppColors } from '@/constants/Colors';
 
 const PLAYER_INFO: { color: QuaterColor; label: string; dot: string }[] = [
@@ -29,6 +32,11 @@ export default function QuaternityScreen() {
   const setPlayerNames = useQuaternityStore((s) => s.setPlayerNames);
   const setAiPlayers = useQuaternityStore((s) => s.setAiPlayers);
   const moveHistory = useQuaternityStore((s) => s.moveHistory);
+  const { width: ww } = useWindowDimensions();
+  const logEntries = useQuaternityMoveLog();
+  const isPlaying = phase === 'playing';
+  const elapsed = useGameTimer(isPlaying && status !== 'finished');
+  const showSideLog = ww > 800;
 
   const recentMoves = moveHistory.slice(-4);
 
@@ -161,18 +169,19 @@ export default function QuaternityScreen() {
         </View>
       )}
 
-      <View style={styles.boardArea}>
+      <View style={[styles.boardArea, showSideLog && styles.boardAreaRow]}>
+        {showSideLog && (
+          <View style={styles.sideLog}>
+            <GameLog entries={logEntries} elapsedSeconds={elapsed} />
+          </View>
+        )}
         <QuaternityBoard />
       </View>
 
       <SafeAreaView style={styles.bottomBar}>
-        {recentMoves.length > 0 && (
-          <View style={styles.movesRow}>
-            {recentMoves.map((move, i) => (
-              <Text key={i} style={[styles.moveText, i === recentMoves.length - 1 && styles.moveTextLast]}>
-                {move}
-              </Text>
-            ))}
+        {!showSideLog && (
+          <View style={styles.bottomLog}>
+            <GameLog entries={logEntries} elapsedSeconds={elapsed} maxHeight={120} />
           </View>
         )}
         {isFinished && (
@@ -233,10 +242,12 @@ const styles = StyleSheet.create({
   statusBar: { alignItems: 'center', paddingVertical: 2 },
   statusText: { color: AppColors.gold, fontSize: 14, fontWeight: '600' },
   boardArea: { flex: 1, justifyContent: 'flex-start', alignItems: 'center' },
+  boardAreaRow: {
+    flexDirection: 'row', alignItems: 'stretch', justifyContent: 'center', gap: 12, paddingHorizontal: 12,
+  },
+  sideLog: { width: 220, minHeight: 200 },
+  bottomLog: { width: '100%', marginBottom: 4 },
   bottomBar: { paddingHorizontal: 12, paddingBottom: 4, alignItems: 'center' },
-  movesRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
-  moveText: { color: '#555', fontSize: 12, fontVariant: ['tabular-nums'] },
-  moveTextLast: { color: '#999', fontWeight: '600' },
   newGameBtn: {
     backgroundColor: AppColors.secondary, paddingHorizontal: 24, paddingVertical: 10,
     borderRadius: 20, marginTop: 4,

@@ -25,6 +25,7 @@ type GameState = {
   newGame: (mode?: GameMode) => void;
   selectSquare: (square: Square) => void;
   makeMove: (from: Square, to: Square, promotion?: PieceSymbol) => void;
+  applyRemoteMove: (from: Square, to: Square, promotion?: PieceSymbol) => void;
   undoMove: () => void;
   resign: (color: Color) => void;
   flipBoard: () => void;
@@ -85,8 +86,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   selectSquare: (square: Square) => {
-    const { engine, selectedSquare, legalMoves, turn, status, board } = get();
+    const { engine, selectedSquare, legalMoves, turn, status, board, gameMode } = get();
     if (status !== 'playing' && status !== 'check') return;
+
+    // Online mode: only allow moves on your own turn
+    if (gameMode === 'online') {
+      const { useOnlineStore } = require('@/stores/onlineStore');
+      const myColor = useOnlineStore.getState().myColor;
+      if (turn !== myColor) return;
+    }
 
     // If tapping a legal move target, execute the move
     if (selectedSquare && legalMoves.includes(square)) {
@@ -149,6 +157,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     ) {
       triggerAiMove();
     }
+  },
+
+  applyRemoteMove: (from: Square, to: Square, promotion?: PieceSymbol) => {
+    const { engine } = get();
+    const event = engine.makeMove(from, to, promotion);
+    if (!event) return;
+
+    set({
+      board: engine.getBoard(),
+      turn: engine.getTurn(),
+      status: engine.getStatus(),
+      selectedSquare: null,
+      legalMoves: [],
+      moveHistory: engine.getHistorySan(),
+      lastMove: { from, to },
+      lastEvent: event,
+      pendingPromotion: null,
+    });
   },
 
   setPromotion: (piece: PieceSymbol) => {

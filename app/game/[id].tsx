@@ -4,7 +4,10 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import ChessBoard from '@/components/board/ChessBoard';
 import PromotionModal from '@/components/board/PromotionModal';
+import GameLog from '@/components/board/GameLog';
 import { useGameStore } from '@/stores/gameStore';
+import { useChessMoveLog } from '@/hooks/useChessMoveLog';
+import { useGameTimer } from '@/hooks/useGameTimer';
 import { AppColors } from '@/constants/Colors';
 import type { GameMode } from '@/lib/chess/types';
 
@@ -28,6 +31,12 @@ export default function GameScreen() {
   const setPlayerNames = useGameStore((s) => s.setPlayerNames);
   const lastEvent = useGameStore((s) => s.lastEvent);
   const aiThinking = useGameStore((s) => s.aiThinking);
+
+  const { width: ww } = useWindowDimensions();
+  const logEntries = useChessMoveLog();
+  const isPlaying = phase === 'playing';
+  const elapsed = useGameTimer(isPlaying && !['checkmate', 'stalemate', 'draw', 'resigned'].includes(status));
+  const showSideLog = ww > 700;
 
   const isGameOver = ['checkmate', 'stalemate', 'draw', 'resigned'].includes(status);
   const winner =
@@ -190,23 +199,21 @@ export default function GameScreen() {
         </View>
       )}
 
-      {/* Board — maximaal schermvullend */}
-      <View style={styles.boardArea}>
+      {/* Board + Log */}
+      <View style={[styles.boardArea, showSideLog && styles.boardAreaRow]}>
+        {showSideLog && (
+          <View style={styles.sideLog}>
+            <GameLog entries={logEntries} elapsedSeconds={elapsed} />
+          </View>
+        )}
         <ChessBoard />
       </View>
 
-      {/* Compacte bottom bar */}
+      {/* Bottom bar */}
       <SafeAreaView style={styles.bottomBar}>
-        {recentMoves.length > 0 && (
-          <View style={styles.movesRow}>
-            {recentMoves.map((move, i) => (
-              <Text key={i} style={[
-                styles.moveText,
-                i === recentMoves.length - 1 && styles.moveTextLast,
-              ]}>
-                {move}
-              </Text>
-            ))}
+        {!showSideLog && (
+          <View style={styles.bottomLog}>
+            <GameLog entries={logEntries} elapsedSeconds={elapsed} maxHeight={140} />
           </View>
         )}
 
@@ -419,25 +426,27 @@ const styles = StyleSheet.create({
   boardArea: {
     flex: 1,
     justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  boardAreaRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'center',
+    gap: 12,
+    paddingHorizontal: 12,
+  },
+  sideLog: {
+    width: 220,
+    minHeight: 200,
+  },
+  bottomLog: {
+    width: '100%',
+    marginBottom: 4,
   },
   bottomBar: {
     paddingHorizontal: 12,
     paddingBottom: 4,
     alignItems: 'center',
-  },
-  movesRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 4,
-  },
-  moveText: {
-    color: '#555',
-    fontSize: 12,
-    fontVariant: ['tabular-nums'],
-  },
-  moveTextLast: {
-    color: '#999',
-    fontWeight: '600',
   },
   newGameBtn: {
     backgroundColor: AppColors.primary,

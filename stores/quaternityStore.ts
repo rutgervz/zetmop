@@ -22,6 +22,20 @@ export type QuaterEvent =
 
 type PlayerStatus = 'active' | 'frozen' | 'defeated';
 
+export type QuaterMoveLogEntry = {
+  moveNumber: number;
+  color: QuaterColor;
+  notation: string;
+  isCapture: boolean;
+  capturedPieceType?: string;
+  capturedColor?: QuaterColor;
+  isCheckmate?: boolean;
+  checkmatedColor?: QuaterColor;
+  isPass?: boolean;
+  isPromotion?: boolean;
+  special?: string;
+};
+
 type QuaternityState = {
   board: (QuaterPiece | null)[][];  // 12×12, [row][col]
   turn: QuaterColor;
@@ -35,18 +49,24 @@ type QuaternityState = {
   winner: QuaterColor | null;
   playerNames: Record<QuaterColor, string>;
   moveHistory: string[];
+  moveLog: QuaterMoveLogEntry[];
   pendingPromotion: { col: number; row: number } | null;
   aiPlayers: Set<QuaterColor>;
   aiThinking: boolean;
 
+  isOnlineMode: boolean;
+  onlineHostId: string | null;
+
   newGame: () => void;
   selectSquare: (col: number, row: number) => void;
+  applyRemoteMove: (fromCol: number, fromRow: number, toCol: number, toRow: number, promoteTo?: PieceSymbol) => void;
   promote: (piece: PieceSymbol) => void;
   pass: () => void;
   resign: (color: QuaterColor) => void;
   undoMove: () => void;
   setPlayerNames: (names: Record<QuaterColor, string>) => void;
   setAiPlayers: (ai: QuaterColor[]) => void;
+  setOnlineMode: (isOnline: boolean, hostId?: string) => void;
 };
 
 const BOARD_SIZE = 12;
@@ -446,6 +466,33 @@ function getControlledColors(
 
 const COL_LABELS = 'abcdefghijkl';
 
+const PIECE_LABEL: Record<string, string> = { k: 'K', q: 'D', r: 'T', b: 'L', n: 'P', p: '' };
+
+function buildMoveLogEntry(
+  moveNumber: number,
+  color: QuaterColor,
+  notation: string,
+  piece: QuaterPiece,
+  captured: QuaterPiece | null,
+  event: QuaterEvent,
+): QuaterMoveLogEntry {
+  const entry: QuaterMoveLogEntry = {
+    moveNumber,
+    color,
+    notation: PIECE_LABEL[piece.type] + notation,
+    isCapture: !!captured,
+  };
+  if (captured) {
+    entry.capturedPieceType = captured.type;
+    entry.capturedColor = captured.color;
+  }
+  if (event.type === 'checkmate') {
+    entry.isCheckmate = true;
+    entry.checkmatedColor = event.checkmated;
+  }
+  return entry;
+}
+
 /**
  * Bepaal de richting van een ACP na een zet.
  * Als de ACP op de hoofddiagonaal sloeg, blijft hij uncommitted.
@@ -568,9 +615,12 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
   winner: null,
   playerNames: { w: 'Wit', r: 'Rood', b: 'Zwart', g: 'Groen' },
   moveHistory: [],
+  moveLog: [],
   pendingPromotion: null,
   aiPlayers: new Set<QuaterColor>(),
   aiThinking: false,
+  isOnlineMode: false,
+  onlineHostId: null,
 
   newGame: () => {
     const { aiPlayers } = get();
@@ -586,6 +636,7 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
       lastEvent: null,
       winner: null,
       moveHistory: [],
+      moveLog: [],
       pendingPromotion: null,
       aiThinking: false,
     });
@@ -594,9 +645,19 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
   },
 
   selectSquare: (col: number, row: number) => {
-    const { board, turn, selectedSquare, legalMoves, activePlayers, status, playerStatus } = get();
+    const { board, turn, selectedSquare, legalMoves, activePlayers, status, playerStatus, isOnlineMode } = get();
     if (status === 'finished') return;
     if (playerStatus[turn] !== 'active') return;
+
+    // Online mode: only allow moves on your own turn (but let AI through on host)
+    if (isOnlineMode) {
+      const { aiPlayers } = get();
+      if (!aiPlayers.has(turn)) {
+        const { useOnlineStore } = require('@/stores/onlineStore');
+        const myColor = useOnlineStore.getState().myColor;
+        if (turn !== myColor) return;
+      }
+    }
 
     // Bepaal welke kleuren de huidige speler controleert
     // (vereenvoudigd: voor nu alleen eigen kleur, assimilatie hieronder)
@@ -686,6 +747,8 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
         if (promote) {
           // Speler kiest promotiestuk
           const moveStr = `${COL_LABELS[fc]}${fr + 1}→${COL_LABELS[col]}${row + 1}`;
+          const logEntry = buildMoveLogEntry(get().moveLog.length + 1, turn, moveStr, piece, captured, event);
+          logEntry.isPromotion = true;
           set({
             board: newBoard,
             activePlayers: newActive,
@@ -697,6 +760,7 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
             lastEvent: event,
             winner: newWinner,
             moveHistory: [...get().moveHistory, moveStr],
+            moveLog: [...get().moveLog, logEntry],
             pendingPromotion: { col, row },
           });
           return;
@@ -705,6 +769,10 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
 
       const newTurn = newStatus === 'finished' ? turn : nextTurn(turn, newActive);
       const moveStr = `${COL_LABELS[fc]}${fr + 1}→${COL_LABELS[col]}${row + 1}`;
+      const logEntries = [...get().moveLog, buildMoveLogEntry(get().moveLog.length + 1, turn, moveStr, piece, captured, event)];
+      if (newStatus === 'finished' && newWinner) {
+        logEntries.push({ moveNumber: logEntries.length + 1, color: newWinner, notation: '', isCapture: false, special: `${get().playerNames[newWinner]} wint!` });
+      }
 
       set({
         board: newBoard,
@@ -718,6 +786,7 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
         lastEvent: event,
         winner: newWinner,
         moveHistory: [...get().moveHistory, moveStr],
+        moveLog: logEntries,
       });
 
       // Trigger AI voor volgende speler als die computer is
@@ -772,6 +841,7 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
       lastEvent: { type: 'pass', color: turn },
       selectedSquare: null,
       legalMoves: [],
+      moveLog: [...get().moveLog, { moveNumber: get().moveLog.length + 1, color: turn, notation: '', isCapture: false, isPass: true }],
     });
   },
 
@@ -804,6 +874,86 @@ export const useQuaternityStore = create<QuaternityState>((set, get) => ({
   setPlayerNames: (names) => set({ playerNames: names }),
 
   setAiPlayers: (ai: QuaterColor[]) => set({ aiPlayers: new Set(ai) }),
+
+  setOnlineMode: (isOnline, hostId) => set({ isOnlineMode: isOnline, onlineHostId: hostId ?? null }),
+
+  applyRemoteMove: (fromCol, fromRow, toCol, toRow, promoteTo) => {
+    // Simulate the move on our local board (same logic as selectSquare, but no turn guards)
+    const { board, turn, activePlayers, playerStatus } = get();
+    const newBoard = board.map((r) => [...r]);
+    const captured = newBoard[toRow][toCol];
+    let piece = { ...newBoard[fromRow][fromCol]! };
+    if (!piece) return;
+
+    // ACP direction
+    if (piece.isAdvancedCentral) {
+      piece = resolveACPDirection(piece, fromCol, fromRow, toCol, toRow, captured);
+    }
+
+    // Promotion
+    if (promoteTo) {
+      piece = { type: promoteTo, color: piece.color, owner: piece.owner };
+    }
+
+    newBoard[toRow][toCol] = piece;
+    newBoard[fromRow][fromCol] = null;
+
+    let event: QuaterEvent = { type: 'move', color: turn };
+    let newActive = [...activePlayers];
+    let newPlayerStatus = { ...playerStatus };
+    let newStatus = 'playing';
+    let newWinner: QuaterColor | null = null;
+
+    if (captured) {
+      event = { type: 'capture', color: turn, captured };
+      if (captured.type === 'k') {
+        const checkmatedColor = captured.color;
+        newActive = newActive.filter((c) => c !== checkmatedColor);
+        newPlayerStatus[checkmatedColor] = 'defeated';
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          for (let c = 0; c < BOARD_SIZE; c++) {
+            if (newBoard[r][c]?.color === checkmatedColor) {
+              newBoard[r][c] = { ...newBoard[r][c]!, owner: turn };
+            }
+          }
+        }
+        event = { type: 'checkmate', checkmated: checkmatedColor, by: turn };
+        if (newActive.length === 1) {
+          newStatus = 'finished';
+          newWinner = newActive[0];
+          event = { type: 'finished', winner: newWinner };
+        }
+      }
+    }
+
+    const newTurn = newStatus === 'finished' ? turn : nextTurn(turn, newActive);
+    const moveStr = `${COL_LABELS[fromCol]}${fromRow + 1}→${COL_LABELS[toCol]}${toRow + 1}`;
+    const logEntry = buildMoveLogEntry(get().moveLog.length + 1, turn, moveStr, piece, captured, event);
+    if (promoteTo) logEntry.isPromotion = true;
+    const logEntries = [...get().moveLog, logEntry];
+    if (newStatus === 'finished' && newWinner) {
+      logEntries.push({ moveNumber: logEntries.length + 1, color: newWinner, notation: '', isCapture: false, special: `${get().playerNames[newWinner]} wint!` });
+    }
+
+    set({
+      board: newBoard,
+      turn: newTurn,
+      activePlayers: newActive,
+      playerStatus: newPlayerStatus,
+      status: newStatus,
+      selectedSquare: null,
+      legalMoves: [],
+      lastMove: { fromCol, fromRow, toCol, toRow },
+      lastEvent: event,
+      winner: newWinner,
+      moveHistory: [...get().moveHistory, moveStr],
+      moveLog: logEntries,
+      pendingPromotion: null,
+    });
+
+    // After applying a remote move, trigger AI if the next turn is an AI player (host only)
+    setTimeout(() => triggerAiIfNeeded(), 400);
+  },
 }));
 
 /**

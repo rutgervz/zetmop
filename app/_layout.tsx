@@ -52,6 +52,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="game/[id]" options={{ headerShown: true }} />
+        <Stack.Screen name="game/online" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

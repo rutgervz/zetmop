@@ -40,11 +40,12 @@ export default function PlayScreen() {
     },
     {
       title: 'Online spelen',
-      subtitle: 'Daag iemand uit in je groep',
+      subtitle: 'Speel tegen vrienden of familie',
       icon: 'globe',
       color: AppColors.gold,
-      onPress: () => {},
-      disabled: true,
+      onPress: () => {
+        router.push('/game/online');
+      },
     },
     {
       title: 'Quaternity',
