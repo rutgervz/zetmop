@@ -198,7 +198,7 @@ export default function QuaternityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A2E' },
+  container: { flex: 1, backgroundColor: AppColors.cream },
   setupContainer: { flex: 1, paddingHorizontal: 24, paddingTop: 16 },
   backBtn: { marginBottom: 24 },
   setupTitle: { fontSize: 28, fontWeight: '800', color: AppColors.text, textAlign: 'center' },

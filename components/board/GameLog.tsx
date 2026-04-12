@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   timer: {
-    color: '#4ECDC4',
+    color: '#C4A35A',
     fontSize: 12,
     fontFamily: FONT_MONO,
     fontVariant: ['tabular-nums'],
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   prompt: {
-    color: '#4ECDC4',
+    color: '#C4A35A',
   },
   logLine: {
     fontSize: 12,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   resultText: {
-    color: '#4ECDC4',
+    color: '#C4A35A',
     fontWeight: '800',
     fontSize: 14,
   },
@@ -289,19 +289,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   captureNotation: {
-    color: '#FF6B6B',
+    color: '#CC4444',
   },
   fieldInfo: {
     color: '#555',
     fontSize: 10,
   },
   captureTag: {
-    color: '#FF6B6B',
+    color: '#CC4444',
     fontSize: 11,
     fontWeight: '600',
   },
   castlingTag: {
-    color: '#45B7D1',
+    color: '#C4A35A',
     fontSize: 10,
     fontStyle: 'italic',
   },

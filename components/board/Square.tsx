@@ -16,15 +16,15 @@ type SquareProps = {
 };
 
 const COLORS = {
-  lightBase: '#F0E6C8',     // warm zand
-  lightAccent: '#F5EDD5',
-  darkBase: '#6BAF8D',      // vrolijk groen
-  darkAccent: '#7BC09D',
-  selected: 'rgba(255, 210, 70, 0.6)',    // gouden selectie
-  legalMove: 'rgba(255, 210, 70, 0.45)',  // gouden dots
-  lastMove: 'rgba(120, 200, 255, 0.3)',   // zacht blauw
+  lightBase: '#F5F0E4',     // ivory
+  lightAccent: '#EDE8DA',
+  darkBase: '#C4A35A',      // goud
+  darkAccent: '#B89A4F',
+  selected: 'rgba(140, 200, 100, 0.5)',   // groen selectie
+  legalMove: 'rgba(140, 200, 100, 0.45)', // groen dots
+  lastMove: 'rgba(196, 163, 90, 0.25)',   // zacht goud
   check: 'radial-gradient(circle, rgba(255,50,50,0.8), rgba(255,0,0,0.3))',
-  checkColor: 'rgba(255, 60, 60, 0.5)',
+  checkColor: 'rgba(255, 60, 60, 0.45)',
 };
 
 export default function Square({
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   legalCapture: {
-    borderColor: 'rgba(255, 210, 70, 0.55)',
+    borderColor: 'rgba(140, 200, 100, 0.55)',
     position: 'absolute',
     backgroundColor: 'transparent',
   },

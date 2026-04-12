@@ -247,7 +247,7 @@ function PlayerChip({ name, color, active }: { name: string; color: 'w' | 'b'; a
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: AppColors.cream,
   },
   // Setup scherm
   setupContainer: {
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   startBtnText: {
-    color: '#1A1A2E',
+    color: AppColors.cream,
     fontSize: 20,
     fontWeight: '800',
   },
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   chipActive: {
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    backgroundColor: 'rgba(196, 163, 90, 0.1)',
   },
   dot: {
     width: 10,
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   newGameText: {
-    color: '#1A1A2E',
+    color: AppColors.cream,
     fontSize: 14,
     fontWeight: '700',
   },

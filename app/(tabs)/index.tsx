@@ -1,104 +1,172 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, SafeAreaView, Platform, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Svg, { Path, Rect, Circle, Line } from 'react-native-svg';
 import { AppColors } from '@/constants/Colors';
+import { Fonts } from '@/constants/Fonts';
 import { useGameStore } from '@/stores/gameStore';
+
+// Custom SVG iconen uit de design spec
+function IconLokaal() {
+  return (
+    <Svg width={30} height={30} viewBox="0 0 30 30" fill="none">
+      <Rect x={1} y={1} width={12} height={12} rx={1.5} fill="#C4A35A" opacity={0.35} />
+      <Rect x={17} y={1} width={12} height={12} rx={1.5} fill="#C4A35A" opacity={0.15} />
+      <Rect x={1} y={17} width={12} height={12} rx={1.5} fill="#C4A35A" opacity={0.15} />
+      <Rect x={17} y={17} width={12} height={12} rx={1.5} fill="#C4A35A" opacity={0.35} />
+      <Circle cx={7} cy={7} r={3} fill="#C4A35A" />
+      <Circle cx={23} cy={23} r={3} fill="#9B7E3A" />
+    </Svg>
+  );
+}
+
+function IconComputer() {
+  return (
+    <Svg width={30} height={30} viewBox="0 0 30 30" fill="none">
+      <Rect x={3} y={2} width={24} height={16} rx={3} stroke="#C4A35A" strokeWidth={1.5} />
+      <Circle cx={15} cy={10} r={3} fill="#C4A35A" opacity={0.35} />
+      <Path d="M10 14h10" stroke="#C4A35A" strokeWidth={1.2} strokeLinecap="round" />
+      <Path d="M15 18v6M10 24h10" stroke="#C4A35A" strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function IconOnline() {
+  return (
+    <Svg width={30} height={30} viewBox="0 0 30 30" fill="none">
+      <Circle cx={10} cy={10} r={5.5} stroke="#C4A35A" strokeWidth={1.5} />
+      <Circle cx={20} cy={10} r={5.5} stroke="#C4A35A" strokeWidth={1.5} />
+      <Path d="M10 17c-5 0-8 3-8 6h16c0-3-3-6-8-6z" fill="#C4A35A" opacity={0.2} />
+      <Path d="M20 17c-5 0-8 3-8 6h16c0-3-3-6-8-6z" fill="#C4A35A" opacity={0.15} />
+    </Svg>
+  );
+}
+
+function IconQuaternity() {
+  return (
+    <Svg width={30} height={30} viewBox="0 0 30 30" fill="none">
+      <Rect x={3} y={3} width={24} height={24} rx={2} stroke="#C4A35A" strokeWidth={1.5} />
+      <Line x1={15} y1={3} x2={15} y2={27} stroke="#C4A35A" strokeWidth={0.8} opacity={0.3} />
+      <Line x1={3} y1={15} x2={27} y2={15} stroke="#C4A35A" strokeWidth={0.8} opacity={0.3} />
+      <Circle cx={9} cy={9} r={2.5} fill="#C4A35A" />
+      <Circle cx={21} cy={9} r={2.5} fill="#C4A35A" opacity={0.7} />
+      <Circle cx={9} cy={21} r={2.5} fill="#C4A35A" opacity={0.5} />
+      <Circle cx={21} cy={21} r={2.5} fill="#C4A35A" opacity={0.35} />
+    </Svg>
+  );
+}
+
+function CrownIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 18h18v2H3v-2zm1.5-4L6 7l4.5 3L12 4l1.5 6L18 7l1.5 7H4.5z" fill="#C4A35A" />
+    </Svg>
+  );
+}
 
 type GameOption = {
   title: string;
-  subtitle: string;
-  icon: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
+  badge: string;
+  icon: React.ReactNode;
   onPress: () => void;
-  disabled?: boolean;
 };
 
 export default function PlayScreen() {
   const newGame = useGameStore((s) => s.newGame);
+  const { width: ww } = useWindowDimensions();
+  const isWide = ww > 700;
 
   const options: GameOption[] = [
     {
-      title: 'Lokaal spelen',
-      subtitle: 'Twee spelers, één scherm',
-      icon: 'handshake-o',
-      color: AppColors.primary,
-      onPress: () => {
-        newGame('local');
-        router.push('/game/local');
-      },
+      title: 'Lokaal',
+      badge: '2 SPELERS',
+      icon: <IconLokaal />,
+      onPress: () => { newGame('local'); router.push('/game/local'); },
     },
     {
-      title: 'Tegen de computer',
-      subtitle: 'Speel tegen Stockfish AI',
-      icon: 'desktop',
-      color: AppColors.accent,
-      onPress: () => {
-        newGame('ai');
-        router.push('/game/ai');
-      },
+      title: 'Computer',
+      badge: 'STOCKFISH',
+      icon: <IconComputer />,
+      onPress: () => { newGame('ai'); router.push('/game/ai'); },
     },
     {
-      title: 'Online spelen',
-      subtitle: 'Speel tegen vrienden of familie',
-      icon: 'globe',
-      color: AppColors.gold,
-      onPress: () => {
-        router.push('/game/online');
-      },
+      title: 'Online',
+      badge: '2 OF 4 SP.',
+      icon: <IconOnline />,
+      onPress: () => { router.push('/game/online'); },
     },
     {
       title: 'Quaternity',
-      subtitle: 'Schaak met vier spelers',
-      icon: 'th-large',
-      color: AppColors.secondary,
-      onPress: () => {
-        router.push('/game/quaternity');
-      },
+      badge: '4 SPELERS',
+      icon: <IconQuaternity />,
+      onPress: () => { router.push('/game/quaternity'); },
     },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>♟ Zet &apos;m op!</Text>
-        <Text style={styles.tagline}>Samen schaken, samen leren</Text>
+        {/* Kroonlijn + Logo */}
+        <View style={styles.logoRow}>
+          <View style={styles.crownLine} />
+          <CrownIcon size={18} />
+          <Text style={styles.logo}>
+            <Text style={styles.logoDefault}>Zet </Text>
+            <Text style={styles.logoGold}>&apos;m</Text>
+            <Text style={styles.logoDefault}> op!</Text>
+          </Text>
+          <CrownIcon size={18} />
+          <View style={styles.crownLine} />
+        </View>
+
+        {/* Tagline */}
+        <View style={styles.taglineRow}>
+          <Text style={styles.tagline}>SCHAAK VOOR JONG & OUD</Text>
+          <View style={styles.taglineDot} />
+          <Text style={styles.subtitle}>Samen schaken, samen winnen</Text>
+        </View>
+
+        {/* Gouden scheidingslijn */}
+        <View style={styles.goldDivider} />
       </View>
 
-      <View style={styles.options}>
+      {/* Vier speelknoppen */}
+      <View style={[styles.options, isWide && styles.optionsRow]}>
         {options.map((option) => (
           <Pressable
             key={option.title}
-            style={({ pressed }) => [
+            style={({ pressed, hovered }) => [
               styles.card,
-              pressed && !option.disabled && styles.cardPressed,
-              option.disabled && styles.cardDisabled,
+              isWide && styles.cardWide,
+              hovered && styles.cardHover,
+              pressed && styles.cardPressed,
             ]}
             onPress={option.onPress}
-            disabled={option.disabled}
           >
-            <View style={[styles.iconContainer, { backgroundColor: option.color + '20' }]}>
-              <FontAwesome name={option.icon} size={28} color={option.color} />
+            <View style={styles.iconCircle}>
+              {option.icon}
             </View>
-            <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>{option.title}</Text>
-              <Text style={styles.cardSubtitle}>{option.subtitle}</Text>
+            <Text style={styles.cardTitle}>{option.title}</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{option.badge}</Text>
             </View>
-            {option.disabled && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Binnenkort</Text>
-              </View>
-            )}
-            {!option.disabled && (
-              <FontAwesome name="chevron-right" size={16} color="#555" />
-            )}
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.footer}>
-        Een Generation Now app · Gratis en open source
-      </Text>
+      {/* Footer */}
+      <View style={styles.footer}>
+        <View style={styles.footerLeft}>
+          <Text style={styles.footerBrand}>Generation Now Games</Text>
+          <Text style={styles.footerSub}>Gratis & open source</Text>
+        </View>
+        <Pressable style={styles.donateBtn}>
+          <Svg width={14} height={14} viewBox="0 0 24 24">
+            <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill={AppColors.cream} />
+          </Svg>
+          <Text style={styles.donateBtnText}>Doneer</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -106,80 +174,194 @@ export default function PlayScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.cream,
   },
   header: {
     alignItems: 'center',
     paddingTop: 40,
-    paddingBottom: 32,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  crownLine: {
+    width: 40,
+    height: 1,
+    ...Platform.select({
+      web: {
+        backgroundImage: 'linear-gradient(90deg, transparent, #E8D5A0, transparent)',
+      } as any,
+      default: {
+        backgroundColor: AppColors.goldLight,
+      },
+    }),
   },
   logo: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: AppColors.text,
+    fontSize: 44,
+    fontWeight: '700',
+    fontFamily: Fonts.display,
     letterSpacing: -0.5,
   },
-  tagline: {
-    fontSize: 16,
-    color: AppColors.textMuted,
+  logoDefault: {
+    color: AppColors.text,
+  },
+  logoGold: {
+    color: AppColors.gold,
+  },
+  taglineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 8,
+    gap: 8,
+  },
+  tagline: {
+    fontSize: 11,
+    fontFamily: Fonts.body,
+    fontWeight: '600',
+    color: AppColors.textMuted,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+  },
+  taglineDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: AppColors.gold,
+  },
+  subtitle: {
+    fontSize: 17,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
+    color: AppColors.textMuted,
+  },
+  goldDivider: {
+    width: '100%',
+    maxWidth: 700,
+    height: 1,
+    marginTop: 20,
+    ...Platform.select({
+      web: {
+        backgroundImage: 'linear-gradient(90deg, transparent, #E8D5A0, #C4A35A, #E8D5A0, transparent)',
+      } as any,
+      default: {
+        backgroundColor: AppColors.goldLight,
+      },
+    }),
   },
   options: {
     paddingHorizontal: 20,
-    gap: 12,
+    gap: 16,
+    alignItems: 'center',
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
   },
   card: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.surface,
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
+    backgroundColor: AppColors.cream,
+    borderWidth: 1,
+    borderColor: AppColors.goldLight,
+    borderRadius: 18,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 400,
+    gap: 12,
+    ...Platform.select({
+      web: {
+        transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+        cursor: 'pointer',
+      } as any,
+      default: {},
+    }),
+  },
+  cardWide: {
+    width: 170,
+    flex: undefined,
+  },
+  cardHover: {
+    borderColor: AppColors.gold,
+    ...Platform.select({
+      web: {
+        transform: [{ translateY: -6 }],
+        boxShadow: '0 12px 36px rgba(196, 163, 90, 0.1)',
+      } as any,
+      default: {},
+    }),
   },
   cardPressed: {
-    opacity: 0.8,
+    opacity: 0.85,
     transform: [{ scale: 0.98 }],
   },
-  cardDisabled: {
-    opacity: 0.5,
-  },
-  iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  cardText: {
-    flex: 1,
+    backgroundColor: AppColors.goldBg,
   },
   cardTitle: {
+    fontSize: 20,
+    fontWeight: '500',
+    fontFamily: Fonts.display,
     color: AppColors.text,
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  cardSubtitle: {
-    color: AppColors.textMuted,
-    fontSize: 13,
-    marginTop: 2,
   },
   badge: {
-    backgroundColor: AppColors.surfaceLight,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: AppColors.goldLight,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 20,
   },
   badgeText: {
-    color: AppColors.textMuted,
-    fontSize: 11,
+    fontSize: 9,
+    fontWeight: '600',
+    fontFamily: Fonts.body,
+    color: AppColors.goldDark,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
   footer: {
-    color: '#555',
-    textAlign: 'center',
-    fontSize: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
     position: 'absolute',
     bottom: 20,
     left: 0,
     right: 0,
+  },
+  footerLeft: {},
+  footerBrand: {
+    fontSize: 12,
+    fontFamily: Fonts.body,
+    fontWeight: '500',
+    color: AppColors.textMuted,
+  },
+  footerSub: {
+    fontSize: 11,
+    fontFamily: Fonts.body,
+    color: AppColors.textMuted,
+    opacity: 0.6,
+  },
+  donateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: AppColors.gold,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+  },
+  donateBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: Fonts.body,
+    color: AppColors.cream,
   },
 });

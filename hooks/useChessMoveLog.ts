@@ -9,6 +9,21 @@ const PIECE_DUTCH: Record<string, string> = {
   p: 'pion', n: 'paard', b: 'loper', r: 'toren', q: 'dame', k: 'koning',
 };
 
+// Nederlandse notatie letters (K=Koning, D=Dame, T=Toren, L=Loper, P=Paard)
+const SAN_TO_NL: Record<string, string> = {
+  K: 'K', Q: 'D', R: 'T', B: 'L', N: 'P',
+};
+
+/** Vertaal SAN (Nf3, Qxd7+, O-O, exd5) naar Nederlandse notatie (Pf3, Dxd7+, O-O, exd5) */
+function dutchNotation(san: string): string {
+  if (san.startsWith('O-')) return san; // rokade
+  const first = san[0];
+  if (first >= 'A' && first <= 'Z' && SAN_TO_NL[first]) {
+    return SAN_TO_NL[first] + san.slice(1);
+  }
+  return san; // pion zetten hebben geen letter prefix
+}
+
 /**
  * Bouwt een MoveLogEntry[] op basis van de chess engine's verbose history.
  */
@@ -41,8 +56,8 @@ export function useChessMoveLog(): MoveLogEntry[] {
       if (isCastling) {
         description = m.san === 'O-O' ? 'korte rokade' : 'lange rokade';
       } else if (isPromotion) {
-        const promotedTo = m.san.match(/=([QRBN])/)?.[1];
-        const pieceName = promotedTo ? PIECE_DUTCH[promotedTo.toLowerCase()] : 'dame';
+        const promotedTo = m.promotion || m.san.match(/=([QRBN])/)?.[1]?.toLowerCase();
+        const pieceName = promotedTo ? PIECE_DUTCH[promotedTo] : 'dame';
         description = `promotie naar ${pieceName}`;
       } else if (isEnPassant) {
         description = 'en passant';
@@ -56,7 +71,7 @@ export function useChessMoveLog(): MoveLogEntry[] {
         moveNumber: moveNum,
         playerName: isWhite ? playerWhite : playerBlack,
         playerColor: isWhite ? PLAYER_COLORS.w : PLAYER_COLORS.b,
-        notation: m.san,
+        notation: dutchNotation(m.san),
         piece: pieceSymbol(m.piece),
         pieceName: PIECE_DUTCH[m.piece],
         from: m.from,

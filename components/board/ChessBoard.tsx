@@ -11,9 +11,9 @@ const EffectsOverlay = isWeb ? require('./EffectsOverlay').default : null;
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
-const BOARD_BORDER_COLOR = '#4A8B6E';
-const BOARD_OUTER_COLOR = '#2D5A48';
-const COORD_COLOR = '#B8D8C8';
+const BOARD_BORDER_COLOR = '#C4A35A';
+const BOARD_OUTER_COLOR = '#9B7E3A';
+const COORD_COLOR = '#9B7E3A';
 
 export default function ChessBoard() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();

@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, View, Pressable, StyleSheet, Text } from 'react-native';
 import Piece from './Piece';
 import { useGameStore } from '@/stores/gameStore';
+import { AppColors } from '@/constants/Colors';
 import type { PieceSymbol } from '@/lib/chess/types';
 
 const PROMOTION_PIECES: PieceSymbol[] = ['q', 'r', 'b', 'n'];
@@ -59,14 +60,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   container: {
-    backgroundColor: '#2C2C2C',
-    borderRadius: 16,
+    backgroundColor: '#FBF8F0',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E8D5A0',
     padding: 24,
     alignItems: 'center',
     minWidth: 300,
   },
   title: {
-    color: '#fff',
+    color: AppColors.text,
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 20,
@@ -79,14 +82,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 8,
     borderRadius: 12,
-    backgroundColor: '#3C3C3C',
+    backgroundColor: '#F5F0E4',
+    borderWidth: 1,
+    borderColor: '#E8D5A0',
     minWidth: 70,
   },
   optionPressed: {
-    backgroundColor: '#5C5C5C',
+    backgroundColor: '#E8D5A0',
   },
   label: {
-    color: '#ccc',
+    color: '#6B6B7B',
     fontSize: 12,
     marginTop: 4,
   },
