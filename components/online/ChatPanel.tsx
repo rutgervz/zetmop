@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   gifLabel: { color: AppColors.accent, fontSize: 12, fontWeight: '800' },
   chatInput: {
     flex: 1,
-    backgroundColor: '#EDEADF',
+    backgroundColor: '#252538',
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -337,8 +337,8 @@ const styles = StyleSheet.create({
   pickerContainer: {
     height: 220,
     borderTopWidth: 1,
-    borderTopColor: '#E8D5A0',
-    backgroundColor: '#F5F0E4',
+    borderTopColor: 'rgba(196, 163, 90, 0.2)',
+    backgroundColor: '#252538',
   },
   emojiScroll: { padding: 8 },
   emojiCategoryLabel: { color: '#666', fontSize: 11, fontWeight: '600', marginBottom: 4, marginTop: 8 },
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   emojiText: { fontSize: 22 },
   gifSearch: {
     margin: 8,
-    backgroundColor: '#EDEADF',
+    backgroundColor: '#252538',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,

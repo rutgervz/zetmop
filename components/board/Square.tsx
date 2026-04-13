@@ -16,13 +16,13 @@ type SquareProps = {
 };
 
 const COLORS = {
-  lightBase: '#F5F0E4',     // ivory
-  lightAccent: '#EDE8DA',
-  darkBase: '#C4A35A',      // goud
-  darkAccent: '#B89A4F',
-  selected: 'rgba(140, 200, 100, 0.5)',   // groen selectie
-  legalMove: 'rgba(140, 200, 100, 0.45)', // groen dots
-  lastMove: 'rgba(196, 163, 90, 0.25)',   // zacht goud
+  lightBase: '#3D3A2E',     // donker zand
+  lightAccent: '#4A4535',
+  darkBase: '#8B7432',      // donker goud
+  darkAccent: '#7A6528',
+  selected: 'rgba(90, 138, 58, 0.6)',     // groen selectie
+  legalMove: 'rgba(90, 138, 58, 0.5)',    // groen dots
+  lastMove: 'rgba(196, 163, 90, 0.3)',    // zacht goud
   check: 'radial-gradient(circle, rgba(255,50,50,0.8), rgba(255,0,0,0.3))',
   checkColor: 'rgba(255, 60, 60, 0.45)',
 };

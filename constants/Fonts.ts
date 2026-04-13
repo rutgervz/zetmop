@@ -2,28 +2,30 @@ import { Platform } from 'react-native';
 
 /**
  * Font families voor Zet 'm op!
- * Web: Google Fonts (Playfair Display + DM Sans)
- * Native: systeemfonts als fallback
+ * Gebruikt @expo-google-fonts packages (werkt cross-platform).
+ * De naam moet exact matchen met de key in useFonts().
  */
 export const Fonts = {
-  display: Platform.select({
-    web: '"Playfair Display", Georgia, serif',
-    ios: 'Georgia',
-    android: 'serif',
-    default: 'serif',
-  }) as string,
+  // Playfair Display — titels & logo
+  displayRegular: 'PlayfairDisplay_400Regular',
+  displayMedium: 'PlayfairDisplay_500Medium',
+  displayBold: 'PlayfairDisplay_700Bold',
+  displayItalic: 'PlayfairDisplay_400Regular_Italic',
 
-  body: Platform.select({
-    web: '"DM Sans", -apple-system, BlinkMacSystemFont, sans-serif',
-    ios: 'System',
-    android: 'sans-serif',
-    default: 'sans-serif',
-  }) as string,
+  // DM Sans — body/UI
+  bodyRegular: 'DMSans_400Regular',
+  bodyMedium: 'DMSans_500Medium',
+  bodySemiBold: 'DMSans_600SemiBold',
 
+  // Monospace — game log, code input
   mono: Platform.select({
     web: 'ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace',
     ios: 'Menlo',
     android: 'monospace',
     default: 'monospace',
   }) as string,
+
+  // Compat aliases (voor bestaande code die Fonts.display / Fonts.body gebruikt)
+  get display() { return this.displayBold; },
+  get body() { return this.bodyRegular; },
 };

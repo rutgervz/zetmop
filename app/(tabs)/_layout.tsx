@@ -1,9 +1,7 @@
 import React from 'react';
-import { Platform } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { Tabs } from 'expo-router';
-import { AppColors } from '@/constants/Colors';
-import { Fonts } from '@/constants/Fonts';
+import Colors from '@/constants/Colors';
 
 // Custom SVG tab iconen per design spec
 function CrownIcon({ color, size = 20 }: { color: string; size?: number }) {
@@ -45,21 +43,18 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: AppColors.goldDark,
-        tabBarInactiveTintColor: '#9B99A8',
+        tabBarActiveTintColor: Colors.goldDark,
+        tabBarInactiveTintColor: Colors.textMuted,
         tabBarStyle: {
-          backgroundColor: AppColors.cream,
-          borderTopColor: AppColors.goldLight,
+          backgroundColor: Colors.cream,
+          borderTopColor: Colors.goldLight,
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {
+          fontFamily: 'DMSans_400Regular',
           fontSize: 11,
-          fontFamily: Fonts.body,
+          letterSpacing: 0.3,
         },
-        headerStyle: {
-          backgroundColor: AppColors.cream,
-        },
-        headerTintColor: AppColors.text,
         headerShown: false,
       }}
     >
@@ -75,6 +70,8 @@ export default function TabLayout() {
         options={{
           title: 'Leren',
           tabBarIcon: ({ color }) => <LerenIcon color={color} />,
+          tabBarItemStyle: { opacity: 0.3 },
+          listeners: { tabPress: (e) => e.preventDefault() },
         }}
       />
       <Tabs.Screen
@@ -82,6 +79,8 @@ export default function TabLayout() {
         options={{
           title: 'Groepen',
           tabBarIcon: ({ color }) => <GroepenIcon color={color} />,
+          tabBarItemStyle: { opacity: 0.3 },
+          listeners: { tabPress: (e) => e.preventDefault() },
         }}
       />
       <Tabs.Screen
@@ -89,6 +88,8 @@ export default function TabLayout() {
         options={{
           title: 'Profiel',
           tabBarIcon: ({ color }) => <ProfielIcon color={color} />,
+          tabBarItemStyle: { opacity: 0.3 },
+          listeners: { tabPress: (e) => e.preventDefault() },
         }}
       />
     </Tabs>

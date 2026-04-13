@@ -1,62 +1,79 @@
 /**
  * Zet 'm op! — Design Tokens
- * Luxe gold/cream thema met dark mode support
+ * Dark mode met gouden accenten
  */
 
-const tintColorLight = '#C4A35A';
-const tintColorDark = '#C4A35A';
+const gold = '#C4A35A';
+const goldLight = 'rgba(196, 163, 90, 0.2)';
+const goldDark = '#9B7E3A';
 
-export default {
-  light: {
-    text: '#1A1A2E',
-    background: '#FBF8F0',
-    tint: tintColorLight,
-    tabIconDefault: '#9B99A8',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#F0EDE4',
-    background: '#1E1E2E',
-    tint: tintColorDark,
-    tabIconDefault: '#9B99A8',
-    tabIconSelected: tintColorDark,
-  },
-};
+const Colors = {
+  // Primary
+  gold,
+  goldLight,
+  goldDark,
+  goldBg: 'rgba(196, 163, 90, 0.08)',
 
-export const AppColors = {
-  // Primary — Gold
-  gold: '#C4A35A',
-  goldLight: '#E8D5A0',
-  goldDark: '#9B7E3A',
-  goldBg: 'rgba(196, 163, 90, 0.06)',
+  // Backgrounds (dark mode)
+  cream: '#1A1A2E',
+  ivory: '#252538',
 
-  // Neutral — Cream/Ivory
-  cream: '#FBF8F0',
-  ivory: '#F5F0E4',
+  // Text (licht op donker)
+  textDark: '#F0EDE4',
+  textMuted: '#9B99A8',
 
-  // Text
-  text: '#1A1A2E',
-  textMuted: '#6B6B7B',
-
-  // Board
-  sqLight: '#F5F0E4',
-  sqDark: '#C4A35A',
-  sqLightHighlight: '#E8E0C8',
-  sqDarkHighlight: '#B8943A',
-  sqLightSelected: '#D4E8C4',
-  sqDarkSelected: '#8DB56B',
+  // Schaakbord (dark mode)
+  squareLight: '#3D3A2E',
+  squareDark: '#8B7432',
+  squareLightHighlight: '#4A4535',
+  squareDarkHighlight: '#7A6528',
+  squareLightSelected: '#3A5A2A',
+  squareDarkSelected: '#5A8A3A',
 
   // Status
   onlineGreen: '#5DCAA5',
-  error: '#CC4444',
-  warning: '#C4A35A',
 
-  // Legacy compat (used in some components)
-  primary: '#C4A35A',
-  secondary: '#9B7E3A',
-  accent: '#C4A35A',
-  background: '#FBF8F0',
-  surface: '#F5F0E4',
-  surfaceLight: '#E8D5A0',
-  success: '#5DCAA5',
+  // Light mode variants (voor eventueel toggle)
+  light: {
+    cream: '#FBF8F0',
+    ivory: '#F5F0E4',
+    textDark: '#1A1A2E',
+    textMuted: '#6B6B7B',
+    goldLight: '#E8D5A0',
+    goldBg: 'rgba(196, 163, 90, 0.06)',
+    squareLight: '#F5F0E4',
+    squareDark: '#C4A35A',
+    squareLightHighlight: '#E8E0C8',
+    squareDarkHighlight: '#B8943A',
+  },
+};
+
+export default Colors;
+
+// Backwards-compatible named export voor bestaande componenten
+export const AppColors = {
+  gold,
+  goldLight,
+  goldDark,
+  goldBg: Colors.goldBg,
+  cream: Colors.cream,
+  ivory: Colors.ivory,
+  text: Colors.textDark,
+  textMuted: Colors.textMuted,
+  sqLight: Colors.squareLight,
+  sqDark: Colors.squareDark,
+  sqLightHighlight: Colors.squareLightHighlight,
+  sqDarkHighlight: Colors.squareDarkHighlight,
+  sqLightSelected: Colors.squareLightSelected,
+  sqDarkSelected: Colors.squareDarkSelected,
+  onlineGreen: Colors.onlineGreen,
+  error: '#CC4444',
+  warning: gold,
+  primary: gold,
+  secondary: goldDark,
+  accent: gold,
+  background: Colors.cream,
+  surface: Colors.ivory,
+  surfaceLight: goldLight,
+  success: Colors.onlineGreen,
 };

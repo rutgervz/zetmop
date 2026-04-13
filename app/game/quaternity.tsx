@@ -7,7 +7,7 @@ import GameLog from '@/components/board/GameLog';
 import { useQuaternityStore, type QuaterColor } from '@/stores/quaternityStore';
 import { useQuaternityMoveLog } from '@/hooks/useQuaternityMoveLog';
 import { useGameTimer } from '@/hooks/useGameTimer';
-import { AppColors } from '@/constants/Colors';
+import Colors, { AppColors } from '@/constants/Colors';
 
 const PLAYER_INFO: { color: QuaterColor; label: string; dot: string }[] = [
   { color: 'w', label: 'Zuid', dot: '#FFFFFF' },
@@ -201,15 +201,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: AppColors.cream },
   setupContainer: { flex: 1, paddingHorizontal: 24, paddingTop: 16 },
   backBtn: { marginBottom: 24 },
-  setupTitle: { fontSize: 28, fontWeight: '800', color: AppColors.text, textAlign: 'center' },
-  setupSubtitle: { fontSize: 16, color: AppColors.textMuted, textAlign: 'center', marginTop: 8, marginBottom: 32 },
+  setupTitle: { fontSize: 28, fontFamily: 'PlayfairDisplay_700Bold', color: Colors.textDark, textAlign: 'center' },
+  setupSubtitle: { fontSize: 16, fontFamily: 'DMSans_400Regular', color: Colors.textMuted, textAlign: 'center', marginTop: 8, marginBottom: 32 },
   nameFields: { gap: 12 },
   nameRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: AppColors.surface, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
   },
   colorDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2 },
-  nameInput: { flex: 1, color: AppColors.text, fontSize: 17, fontWeight: '500', padding: 0 },
+  nameInput: { flex: 1, color: Colors.textDark, fontSize: 17, fontFamily: 'DMSans_500Medium', padding: 0 },
   aiLabel: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
   },
@@ -225,11 +225,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(78, 205, 196, 0.15)',
   },
   startBtn: {
-    backgroundColor: AppColors.secondary, paddingVertical: 16, borderRadius: 16,
+    backgroundColor: Colors.gold, paddingVertical: 16, borderRadius: 16,
     alignItems: 'center', marginTop: 32,
   },
   startBtnPressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  startBtnText: { color: '#FFF', fontSize: 20, fontWeight: '800' },
+  startBtnText: { color: Colors.cream, fontSize: 20, fontFamily: 'PlayfairDisplay_700Bold' },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 12, paddingVertical: 4,
@@ -238,9 +238,9 @@ const styles = StyleSheet.create({
   turnDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: '#555' },
   turnDotActive: { borderColor: AppColors.gold, borderWidth: 2, transform: [{ scale: 1.3 }] },
   turnDotEliminated: { opacity: 0.2 },
-  turnText: { color: '#999', fontSize: 13, fontWeight: '500', marginLeft: 4 },
+  turnText: { color: Colors.textMuted, fontSize: 13, fontFamily: 'DMSans_500Medium', marginLeft: 4 },
   statusBar: { alignItems: 'center', paddingVertical: 2 },
-  statusText: { color: AppColors.gold, fontSize: 14, fontWeight: '600' },
+  statusText: { color: Colors.gold, fontSize: 14, fontFamily: 'DMSans_600SemiBold' },
   boardArea: { flex: 1, justifyContent: 'flex-start', alignItems: 'center' },
   boardAreaRow: {
     flexDirection: 'row', alignItems: 'stretch', justifyContent: 'center', gap: 12, paddingHorizontal: 12,
@@ -249,8 +249,8 @@ const styles = StyleSheet.create({
   bottomLog: { width: '100%', marginBottom: 4 },
   bottomBar: { paddingHorizontal: 12, paddingBottom: 4, alignItems: 'center' },
   newGameBtn: {
-    backgroundColor: AppColors.secondary, paddingHorizontal: 24, paddingVertical: 10,
+    backgroundColor: Colors.gold, paddingHorizontal: 24, paddingVertical: 10,
     borderRadius: 20, marginTop: 4,
   },
-  newGameText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
+  newGameText: { color: Colors.cream, fontSize: 14, fontFamily: 'DMSans_600SemiBold' },
 });

@@ -8,7 +8,7 @@ import GameLog from '@/components/board/GameLog';
 import { useGameStore } from '@/stores/gameStore';
 import { useChessMoveLog } from '@/hooks/useChessMoveLog';
 import { useGameTimer } from '@/hooks/useGameTimer';
-import { AppColors } from '@/constants/Colors';
+import Colors, { AppColors } from '@/constants/Colors';
 import type { GameMode } from '@/lib/chess/types';
 
 export default function GameScreen() {
@@ -260,13 +260,14 @@ const styles = StyleSheet.create({
   },
   setupTitle: {
     fontSize: 28,
-    fontWeight: '800',
-    color: AppColors.text,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    color: Colors.textDark,
     textAlign: 'center',
   },
   setupSubtitle: {
     fontSize: 16,
-    color: AppColors.textMuted,
+    fontFamily: 'DMSans_400Regular',
+    color: Colors.textMuted,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 40,
@@ -291,18 +292,18 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    color: AppColors.text,
+    color: Colors.textDark,
     fontSize: 18,
-    fontWeight: '500',
+    fontFamily: 'DMSans_500Medium',
     padding: 0,
   },
   levelSection: {
     marginTop: 8,
   },
   levelTitle: {
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'DMSans_600SemiBold',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -329,12 +330,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   levelLabel: {
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'DMSans_600SemiBold',
   },
   levelLabelActive: {
-    color: AppColors.primary,
+    color: Colors.gold,
   },
   aiLabel: {
     flex: 1,
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   startBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.gold,
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
@@ -359,9 +360,9 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   startBtnText: {
-    color: AppColors.cream,
+    color: Colors.cream,
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
   // Game scherm
   topBar: {
@@ -390,7 +391,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   chipActive: {
-    backgroundColor: 'rgba(196, 163, 90, 0.1)',
+    backgroundColor: Colors.goldBg,
+    borderWidth: 2,
+    borderColor: Colors.gold,
   },
   dot: {
     width: 10,
@@ -400,27 +403,27 @@ const styles = StyleSheet.create({
     borderColor: '#555',
   },
   chipText: {
-    color: '#666',
+    color: Colors.textMuted,
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'DMSans_500Medium',
   },
   chipTextActive: {
-    color: AppColors.primary,
-    fontWeight: '600',
+    color: Colors.gold,
+    fontFamily: 'DMSans_600SemiBold',
   },
   statusBar: {
     alignItems: 'center',
     paddingVertical: 2,
   },
   statusText: {
-    color: AppColors.gold,
+    color: Colors.gold,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'DMSans_600SemiBold',
   },
   thinkingText: {
-    color: AppColors.accent,
+    color: Colors.goldDark,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'DMSans_500Medium',
     fontStyle: 'italic',
   },
   boardArea: {
@@ -449,15 +452,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newGameBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.gold,
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 20,
     marginTop: 4,
   },
   newGameText: {
-    color: AppColors.cream,
+    color: Colors.cream,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'DMSans_600SemiBold',
   },
 });
